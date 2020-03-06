@@ -1,8 +1,20 @@
 import React from 'react';
 import logo from './logo.svg';
 import './App.css';
-
+import readTextFile from './utils/readFile'
+import randomId from './utils/randomId'
 function App() {
+
+  React.useEffect(() => {
+    // console.log(readTextFile())
+    console.log(
+      randomId(
+        readTextFile()
+      )
+    )
+  }, [])
+
+
   return (
     <div className="App">
       <header className="App-header">
