@@ -1,6 +1,10 @@
+import { getRandomTupleKey, shuffle, createTupleKeys }  from './random'
 import words from './words.txt'
 
-const readTextFile = () => {
+
+export const  getTable = () => formatTuple(readTextFile())
+
+export const readTextFile = () => {
     const file = words
     let rawFile = new XMLHttpRequest();
     let allText;
@@ -9,14 +13,21 @@ const readTextFile = () => {
     {
         if(rawFile.readyState === 4)
         {
-            if(rawFile.status === 200 || rawFile.status == 0)
+            if(rawFile.status === 200 || rawFile.status === 0)
             {
                 allText = rawFile.responseText;
             }
         }
     }
     rawFile.send(null);
-    return allText.split('\n')
+    allText = allText.split('\n')
+    createTupleKeys(allText.length)
+    return allText
 }
 
-export default readTextFile;
+const formatTuple = (words) => {
+    const tuples = [];
+    words.map(word => tuples.push({key:getRandomTupleKey(), value: word}))
+    return  shuffle(tuples);
+}
+

@@ -1,35 +1,45 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { useEffect, useState } from 'react';
 import './App.css';
-import readTextFile from './utils/readFile'
-import randomId from './utils/randomId'
+import Disk from './struct/Disk'
+import Hash from './struct/Hash'
+import { getTable } from './utils/readFile'
+
 function App() {
 
-  React.useEffect(() => {
-    // console.log(readTextFile())
-    console.log(
-      randomId(
-        readTextFile()
-      )
-    )
+  const [input, setInput] = useState('')
+  const [word, setWord] = useState('')
+  const [tuples] = useState(getTable())
+  const [disk] = useState(new Disk())
+  const [hash] = useState(new Hash())
+
+  const test = () => {
+    const wordsError = [];
+    tuples.map(tuple=> {
+      if (!(disk.get(hash.get(tuple.key), tuple.key)===tuple.value)){
+        wordsError.push({ key: tuple.key, correct: tuple.value, invalid: disk.get(hash.get(tuple.key), tuple.key)})
+      }
+    })
+    console.log((1 - wordsError.length/tuples.length)*100+'% de acerto.')
+    console.log(wordsError)
+  }
+  
+  useEffect(() => {
+    console.log(tuples)
+    tuples.map(tuple=> disk.add(hash.add(tuple.key), tuple))
+    test()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-
+  const handleChange = (event) => setInput(event.target.value)
+  const search = () => {
+    setWord(disk.get(hash.get(input), input))
+  }
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+          {word}
+          <input type="text" value={input} onChange={handleChange} />
+          <button onClick={search}>Pesquisar</button>
       </header>
     </div>
   );
