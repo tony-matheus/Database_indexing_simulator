@@ -1,7 +1,9 @@
 import { getRandomPageKey }  from '../utils/random'
 
 export default class Bucket {
-  constructor () {
+  constructor ({id}) {
+    this.id = id
+    this.name = 'bucket ' + id
     this.pageKey = getRandomPageKey();
   }
 }

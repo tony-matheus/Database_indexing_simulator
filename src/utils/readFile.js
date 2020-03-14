@@ -1,5 +1,6 @@
-import { getRandomTupleKey, shuffle, createTupleKeys }  from './random'
-import words from './words.txt'
+import { getRandomTupleKey, shuffle, createTupleKeys, getRandomPageKey }  from './random'
+import _ from 'lodash'
+import words from './wordsTest.txt'
 
 
 export const  getTable = () => formatTuple(readTextFile())
@@ -25,9 +26,10 @@ export const readTextFile = () => {
     return allText
 }
 
-const formatTuple = (words) => {
-    const tuples = [];
-    words.map(word => tuples.push({key:getRandomTupleKey(), value: word}))
-    return  shuffle(tuples);
+export const formatTuple = async (words) => {
+    // words.map(word => tuples.push({key:getRandomTupleKey(), value: word}))
+    const tuples = words.map(word => ({key: getRandomTupleKey(), value: word}))
+    const shuffled = await _.shuffle(tuples)
+    return shuffled
 }
 

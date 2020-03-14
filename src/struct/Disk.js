@@ -11,13 +11,13 @@ export default class Disk {
   get = (pageKey, tupleKey) => this.content[pageKey].get(tupleKey)
 
   fillPage = (tuples) => {
-    createPageKeys()
+    createPageKeys(PAGE_SIZE)
     let pages = {}
 
     while(tuples.length){
       pages[getRandomPageKey()] = new Page(tuples.splice(tuples.length - PAGE_SIZE, PAGE_SIZE))
     }
-    
+
     return pages
   }
 }

@@ -1,0 +1,2 @@
+export const TABLE_ADD_TUPLES = 'TABLE_ADD_TUPLES'
+

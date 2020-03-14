@@ -18,7 +18,12 @@ export default class Hash {
 
   get = (key) => this.table[this.function(key)].pageKey
 
-  function = (key) => key % this.prime
+  function = (key) => {
+    console.log(key)
+    console.log(this.prime)
+    console.log(key % this.prime)
+    return key % this.prime
+  }
 
   generatePrimeNumber = (number) => {
     for (let currentNumber= number + 1; currentNumber > 2; currentNumber--)
