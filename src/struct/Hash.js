@@ -21,7 +21,7 @@ export default class Hash {
   function = (key) => key % this.prime
 
   generatePrimeNumber = (number) => {
-    for (let currentNumber=number-1; currentNumber>2; currentNumber--)
+    for (let currentNumber= number + 1; currentNumber > 2; currentNumber--)
       if(this.isPrime(currentNumber)) return currentNumber
   }
   
