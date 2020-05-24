@@ -1,39 +1,69 @@
-import { NUMBER_MAX_PAGES }  from '../utils/constants'
-import Bucket  from './Bucket'
-import { createPageKeys }  from '../utils/random'
+//import { NUMBER_MAX_PAGES }  from '../utils/constants';
+import Bucket  from './Bucket';
+import { generatePrimeNumber } from '../utils/prime'
 
 export default class Hash {
 
-  constructor() {
-    createPageKeys(NUMBER_MAX_PAGES)
-    this.prime = this.generatePrimeNumber(NUMBER_MAX_PAGES);
-    this.table = new Array(NUMBER_MAX_PAGES);
+  constructor(tuples, settings, pk) {
+    this.settings = settings;
+    this.prime = settings.HASH_NUMBER //generatePrimeNumber(settings.HASH_NUMBER);
+    this.table = this.generateHashTable(tuples, pk);
   }
 
-  add = (tupleKey) => {
-    const key = this.function(tupleKey)
-    if(!this.table[key]) this.table[key] = new Bucket();
-    return this.table[key].pageKey
+  function = (key) => key % this.prime;
+
+  add = (pageKey, tupleKey) => this.table[this.function(tupleKey)].add(pageKey, tupleKey);
+
+  get = (tupleKey) =>
+    this.table[this.function(tupleKey)].get(tupleKey);
+
+  generateHashTable = (tuples, pk) => {
+    const table = {};
+    this.generateHashPrototype(tuples, pk).map(key => {
+      table[key] = new Bucket(key, 0, this.settings)
+    })
+    return table;
   }
 
-  get = (key) => this.table[this.function(key)].pageKey
-
-  function = (key) => {
-    console.log(key)
-    console.log(this.prime)
-    console.log(key % this.prime)
-    return key % this.prime
+  generateHashPrototype = (tuples, pk) => {
+    const prototype = [];
+    tuples.map(tuple => {
+      const key = this.function(tuple[pk]);
+      if (!prototype.includes(key)) return prototype.push(key);
+    })
+    this.settings.BUCKET_SIZE = parseInt(tuples.length/prototype.length)
+    return prototype;
   }
 
-  generatePrimeNumber = (number) => {
-    for (let currentNumber= number + 1; currentNumber > 2; currentNumber--)
-      if(this.isPrime(currentNumber)) return currentNumber
-  }
-  
-  isPrime = number => {
-    for(let i = 2; i < number; i++)
-      if (number % i === 0) return false;
-    return number > 1;
+  keys = () => Object.keys(this.table)
+
+  buckets = () => this.keys().map(key => this.table[key])
+
+  overflowRate = () => {
+    const overflowCount = this.overflowCount()
+    return (overflowCount/(this.keys().length + overflowCount) * 100).toFixed(2)
   }
 
+  overflowCount = () =>
+    this.keys().reduce((count, key) =>
+      parseInt(count) + parseInt(this.table[key].overflowCount()))
+
+  showBucketsSize = () => {
+    let count = 0
+    this.keys().map(key=> {
+      const size = this.table[key].size();
+      count = count + size;
+    })
+  }
+
+  collisionRate = () => {
+    const collisionRateByBucket = this.calcCollisionRateByBucket()
+    return ((collisionRateByBucket.reduce((sum, bucketRate) =>
+      sum + bucketRate) / collisionRateByBucket.length ) * 100).toFixed(2)
+  }
+
+  calcCollisionRateByBucket = () =>
+    this.keys().map(key =>
+      parseInt(this.table[key].collisionCount())/parseInt(this.table[key].size())
+    )
 }

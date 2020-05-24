@@ -1,0 +1,190 @@
+import Regex, { createTableSubRegex, testQuerie } from '../utils/Regex'
+import Table from './Table';
+import _ from 'lodash'
+import { formatObjectToArray } from '../utils/fomart';
+
+export default class Parser {
+
+  constructor() {
+    this.database = {}
+    this.graph = []
+  }
+
+  processSQL = (sql) => this.searchAction(this.format(sql))
+
+  updateTable = (tables) => {
+    this.database = tables
+  }
+
+  format = (sql) => {
+    return Regex().map(r => r.exec(sql)).filter(el => el !== null)[0]
+  }
+
+  searchAction = (options) => {
+    switch (options[1].toLowerCase()) {
+      case 'select':
+        if (options[5] === 'where')
+          return this.select({ which: options[2], table: options[4], where: [options[6], options[7], options[8]] })
+        return this.select({ which: options[2], table: options[4] })
+      case 'create table':
+        return this.createTable({
+          tableName: options[2],
+          columns: options[3],
+          primaryKeyColumn: options[5],
+          foreignKey: options[7],
+          tableReferences: options[8]
+        })
+      default:
+        break
+    }
+  }
+
+  createTable = ({ tableName, columns, primaryKeyColumn, foreignKey, tableReferences }) => {
+    return new Table(tableName, this.getColumns(columns, primaryKeyColumn), primaryKeyColumn, foreignKey, tableReferences)
+  }
+
+  getColumns = (columns, primaryKeyColumn) => this.findTableColumns(columns).filter(column => !primaryKeyColumn.trim().includes(column.name))
+
+  findTableColumns = (columns, ) => {
+    columns = testQuerie(columns, createTableSubRegex)
+    return this.turnRegexToColumnInfo(columns)
+  }
+
+  turnRegexToColumnInfo = (columns) =>
+    columns.map(column =>
+      ({
+        name: column[1].trim(),
+        type: column[2].trim(),
+        amount: column[3].trim(),
+        isNull: column[4].trim()
+      })
+    )
+
+  select = ({ which, table, where = '' }) => {
+    console.log(this.database)
+    if (where) {
+      // function ler pages para pegar table
+      // function pegar table
+      // pegar a outra tabela
+      // juntar as outras duas tabelas => table unica
+      // percorrer a tabela e achar salario > 1000 => tabela unica menor
+      // filtrar a tabela por nome e salario => retorno uma tabela com nome salario
+      // empregado =>  filtro de tabela => resultado final?
+      return console.log(`selecionar ${which} na tabela ${table} onde ${where[0]} for ${where[1]} que ${where[2]}`)
+    }
+    // select * from Table
+    this.startSelect(which, table)
+    console.log(this.graph)
+    return this.graph
+    return console.log(`selecionar ${which} na tabela ${table}`)
+  }
+
+  // Search Processor
+
+  startSelect = (fields, tableName, hasWhere = false) => {
+    this.graph = []
+    if (hasWhere) {
+      // look for another tables
+    }
+
+    return this.treatSimpleSelect(fields.toLowerCase().trim(), tableName)
+  }
+
+  treatSimpleSelect = (fields, tableName) => {
+    console.log(fields)
+    let id = 1
+    if (fields === '*' || fields === 'all') {
+      this.addNode('Pegar Paginas da ' + tableName, id)
+      const pages = this.getPages(tableName)
+      id += 1
+      this.addNode('Juntar Paginas do ' + tableName, id, id - 1, id)
+      const table = this.getTable(pages)
+      id += 1
+      this.addNode('Exibir Tabela Resultado', id, id - 1, id)
+      return
+    }
+
+    this.addNode('Pegar Paginas da ' + tableName, id)
+    const pages = this.getPages(tableName)
+    id += 1
+    this.addNode('Juntar Paginas do ' + tableName, id, id - 1, id)
+    const table = this.getTable(pages)
+    id += 1
+    this.addNode('Filtrar tabela resultado com colunas selecionads', id, id - 1, id)
+    id += 1
+    const filteredTable = this.filterTableBySearch(table)
+    console.log(filteredTable)
+    this.addNode('Exibir Tabela Resultado', id, id - 1, id)
+  }
+
+  getPages = (tableName) => formatObjectToArray(this.database[tableName].disk.content)
+
+  getTable = (pages) => {
+    let table = []
+    pages.map(page => Object.values(page.value.content).map(tuple => table.push(tuple)))
+    return table
+  }
+
+  filterTableBySearch = (table, columns = ['salario', 'nome']) => {
+    const keys = Object.keys(table[0])
+    const differences = _.difference(keys, columns)
+    return table.map(tuple => {
+      differences.map(diff => { delete tuple[diff] })
+      return tuple
+    })
+  }
+
+  addNode = (label, id, source = '', target = '') => {
+    this.graph.push({ id: id.toString(), data: { label }, position: { x: 250, y: 70 * id } })
+    if (source) {
+      this.graph.push({ id: `e${source}-${target}`, source: source.toString(), target: target.toString(), animated: true })
+    }
+  }
+
+  arrDiff = (a1, a2) => {
+
+    var a = [], diff = [];
+
+    for (var i = 0; i < a1.length; i++) {
+      a[a1[i]] = true;
+    }
+
+    for (var i = 0; i < a2.length; i++) {
+      if (a[a2[i]]) {
+        delete a[a2[i]];
+      } else {
+        a[a2[i]] = true;
+      }
+    }
+
+    for (var k in a) {
+      diff.push(k);
+    }
+
+    return diff;
+  }
+}
+/*
+select * from table
+startSelect = (fields, table, hasWhere = false) => {
+  if(fields.trim() === '*'){
+    const arrayDePaginas = /pegar paginas da table/g // map
+
+    const tabela = pegarTable(arrayDePaginas)
+
+    if(!hasWhere)
+      Verificr table
+      switch
+        case 'empregados'
+          binaryScan
+        case 'empregados'
+          binaryScan
+        case 'empregados'
+          binaryScan
+    else
+      c
+
+  }
+ processar o a
+}
+*/

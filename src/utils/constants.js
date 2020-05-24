@@ -1,3 +1,3 @@
-export const PAGE_SIZE = 10;
-export const NUMBER_MAX_PAGES = 5;
-// export const NUMBER_MAX_PAGES = 500;
+export const PAGE_SIZE = 1000;
+export const NUMBER_MAX_PAGES = 1000;
+export const BUCKET_SIZE = 200;
