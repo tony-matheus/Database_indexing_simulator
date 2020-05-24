@@ -8,12 +8,14 @@ export default class Parser {
   constructor() {
     this.database = {}
     this.graph = []
+    this.simpleGraph = []
+    this.graphId = 1
   }
 
   processSQL = (sql) => this.searchAction(this.format(sql))
 
-  updateTable = (tables) => {
-    this.database = tables
+  updateDatabase = (database) => {
+    this.database = database
   }
 
   format = (sql) => {
@@ -61,7 +63,6 @@ export default class Parser {
     )
 
   select = ({ which, table, where = '' }) => {
-    console.log(this.database)
     if (where) {
       // function ler pages para pegar table
       // function pegar table
@@ -74,9 +75,7 @@ export default class Parser {
     }
     // select * from Table
     this.startSelect(which, table)
-    console.log(this.graph)
     return this.graph
-    return console.log(`selecionar ${which} na tabela ${table}`)
   }
 
   // Search Processor
@@ -91,30 +90,45 @@ export default class Parser {
   }
 
   treatSimpleSelect = (fields, tableName) => {
-    console.log(fields)
     let id = 1
     if (fields === '*' || fields === 'all') {
-      this.addNode('Pegar Paginas da ' + tableName, id)
-      const pages = this.getPages(tableName)
+      this.addSimpleNode('Pegar Paginas da' + tableName, id, {
+        doWhat: 'getPages',
+        tableName
+      }, id + 1)
       id += 1
-      this.addNode('Juntar Paginas do ' + tableName, id, id - 1, id)
-      const table = this.getTable(pages)
+
+      this.addSimpleNode('Juntar Paginas da' + tableName, id, {
+        doWhat: 'getTable',
+        tableName
+      }, id + 1)
       id += 1
-      this.addNode('Exibir Tabela Resultado', id, id - 1, id)
+
+      this.addSimpleNode('exibir resultado da consulta', id, {
+        doWhat: 'showResult',
+        tableName
+      })
+      // this.addNode('Pegar Paginas da ' + tableName, id)
+      // const pages = this.getPages(tableName)
+      // id += 1
+      // this.addNode('Juntar Paginas do ' + tableName, id, id - 1, id)
+      // const table = this.getTable(pages)
+      // id += 1
+      // this.addNode('Exibir Tabela Resultado', id, id - 1, id)
       return
     }
 
-    this.addNode('Pegar Paginas da ' + tableName, id)
-    const pages = this.getPages(tableName)
-    id += 1
-    this.addNode('Juntar Paginas do ' + tableName, id, id - 1, id)
-    const table = this.getTable(pages)
-    id += 1
-    this.addNode('Filtrar tabela resultado com colunas selecionads', id, id - 1, id)
-    id += 1
-    const filteredTable = this.filterTableBySearch(table)
-    console.log(filteredTable)
-    this.addNode('Exibir Tabela Resultado', id, id - 1, id)
+    // this.addNode('Pegar Paginas da ' + tableName, id)
+    // const pages = this.getPages(tableName)
+    // id += 1
+    // this.addNode('Juntar Paginas do ' + tableName, id, id - 1, id)
+    // const table = this.getTable(pages)
+    // id += 1
+    // this.addNode('Filtrar tabela resultado com colunas selecionads', id, id - 1, id)
+    // id += 1
+    // const filteredTable = this.filterTableBySearch(table)
+    // console.log(filteredTable)
+    // this.addNode('Exibir Tabela Resultado', id, id - 1, id)
   }
 
   getPages = (tableName) => formatObjectToArray(this.database[tableName].disk.content)
@@ -134,34 +148,15 @@ export default class Parser {
     })
   }
 
+  addSimpleNode = (label, id, step, target = '') => {
+    this.simpleGraph.push({ [id]: { target: [target], label, step }, position: { x: 250, y: 70 * id } })
+  }
+
   addNode = (label, id, source = '', target = '') => {
     this.graph.push({ id: id.toString(), data: { label }, position: { x: 250, y: 70 * id } })
     if (source) {
       this.graph.push({ id: `e${source}-${target}`, source: source.toString(), target: target.toString(), animated: true })
     }
-  }
-
-  arrDiff = (a1, a2) => {
-
-    var a = [], diff = [];
-
-    for (var i = 0; i < a1.length; i++) {
-      a[a1[i]] = true;
-    }
-
-    for (var i = 0; i < a2.length; i++) {
-      if (a[a2[i]]) {
-        delete a[a2[i]];
-      } else {
-        a[a2[i]] = true;
-      }
-    }
-
-    for (var k in a) {
-      diff.push(k);
-    }
-
-    return diff;
   }
 }
 /*

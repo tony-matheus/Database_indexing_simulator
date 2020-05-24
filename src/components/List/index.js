@@ -1,7 +1,6 @@
 import React from 'react'
-import { View, FlatList } from 'react-native'
 import { Container, ListWrapper } from './styles'
-import PageItem, { BucketItem, TableItem } from './Item'
+import { PageItem, BucketItem, TableItem } from './Item'
 
 const List = ({ data, onSelect, typeData }) =>
   <Container>

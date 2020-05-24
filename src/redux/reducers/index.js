@@ -1,6 +1,6 @@
 import { combineReducers } from 'redux'
-import table from './table'
+import database from './database'
 
 export default combineReducers({
-  table
+  database
 })
