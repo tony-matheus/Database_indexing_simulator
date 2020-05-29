@@ -50,8 +50,8 @@ export default Component => withConnect(props => {
 
   const doSearch = () => {
     parser.processSQL(search)
-    queryProcessor.processGraph(parser.simpleGraph)
-    setElements([...getGraphLib(parser.simpleGraph)])
+    queryProcessor.processGraph(parser.graph)
+    setElements([...getGraphLib(parser.uiGraph)])
   }
 
   const onChange = (evt) => {

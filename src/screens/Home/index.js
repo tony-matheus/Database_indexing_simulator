@@ -5,8 +5,6 @@ import List, { TableList } from '../../components/List'
 export const Home = ({ tables }) => {
   const [selected, setSelected] = useState('departamento')
   console.clear()
-  console.log(tables)
-  console.log(tables[selected])
   const [listData, setListData] = useState({
     typeData: 'pages',
     data: tables[selected].pages,
@@ -26,8 +24,6 @@ export const Home = ({ tables }) => {
       }
     })
   }, [tables])
-
-  console.error(listData)
   return (
     <div>
       <List

@@ -1,7 +1,9 @@
 const Regex = () =>
   [
     /\s*(select|SELECT)\s*([a-zA-Z,*\s]+)(from)\s*([a-zA-Z]+)\s*$/g,
+
     /\s*(select|SELECT)\s*([a-zA-Z,*\s]+)(from)\s*([a-zA-Z]+)\s*(where)\s*(.*)(\s^\+|-|\*|\/|=|>|<|>=|&|\||%|!|\(|\))\s*(\d*)\s*$/g,
+
     /\s*(create table)\s*([a-zA-Z]+)\s*\(\s*([a-zA-Z_\s*,(0-9)]+)\s*constraint\s*([a-zA-Z_]+)\s*primary\s*key\(\s*([a-zA-Z_\s*,]+)\s*\)\s*\)/g,
     /\s*(create table)\s*([a-zA-Z]+)\s*\(\s*([a-zA-Z_\s*,(0-9)]+)\s*constraint\s*([a-zA-Z_]+)\s*primary\s*key\(\s*([a-zA-Z_\s*,]+)\s*\)\s*,\s*constraint\s*([a-zA-Z_]+)\s*foreign\s*key\(\s*([a-zA-Z_]+)\)\s*references\s*([a-zA-Z_]+)\s*\)/g
   ]

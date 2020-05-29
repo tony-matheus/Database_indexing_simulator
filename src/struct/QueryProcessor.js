@@ -1,48 +1,89 @@
 import { formatObjectToArray } from "../utils/fomart"
-
+import _ from 'lodash'
 export default class QueryProcessor {
   constructor() {
     this.database = {}
-    this.steps = []
+    this.intermedResults = []
     this.stepIndex = 0
+    this.processedNodes = []
   }
 
   processGraph = (graph) => {
-    graph.map((node) => this.processNode(node))
+    const firstNode = Object.keys(graph)[0]
+    this.startProcessGraph(graph, firstNode)
+    console.log(this.intermedResults)
   }
 
+  startProcessGraph = (graph, key) => {
+    const anotherNode = this.thereIsAnotherEdge(graph, key, graph[key].target)
+    if (anotherNode && anotherNode.length > 0) {
+      anotherNode.map(node => {
+        this.processNode(graph[node])
+        this.processedNodes.push(node)
+      })
+    }
+    if(!this.checkIfNodeIsProcessed(key)){
+      this.processNode(graph[key])
+      this.processedNodes.push(key)
+      if(graph[key].target !== '')
+        return this.startProcessGraph(graph, graph[key].target)
+    }
+    return 'hello'
+  }
+
+
+  checkIfNodeIsProcessed = (node) => this.processedNodes.filter(processedNode => processedNode === node).length > 0
+
+  thereIsAnotherEdge = (graph, key) => {
+    let anotherNodes = 0
+    let nodesList = []
+    Object.keys(graph).map(node => {
+      if (graph[node].target === key) {
+        anotherNodes++
+        nodesList.push(node)
+      }
+    })
+
+    if (anotherNodes >= 2)
+      return _.difference(nodesList, this.processedNodes)
+    return null
+  }
 
   updateDatabase = (database) => {
     this.database = database
   }
 
   processNode = (node) => {
-    const id = Object.keys(node)[0]
-    const step = node[id].step
+    console.log(node.label)
+    const step = node.step
     this.processStep(step)
   }
 
   processStep = (step) => {
     // TODO: put an hasMultipleTables?
-    const { doWhat, tableName, } = step
+    const { doWhat, tableName } = step
     // return
     switch (doWhat) {
       case 'getPages':
-        this.steps.push(this.getPages(tableName))
+        this.intermedResults.push(this.getPages(tableName))
         this.stepIndex += 1
         break
       case 'getTable':
-        this.steps.push(this.getTable(this.steps[0]))
+        this.intermedResults.push(this.getTable(this.intermedResults[0]))
         this.stepIndex += 1
+        // if ( + de uma tabela)
         break
+      case 'getBuckets':
+
+       break
       case 'showResult':
-        this.steps.push(this.steps[this.stepIndex - 1])
+        this.intermedResults.push(this.intermedResults[this.stepIndex - 1])
         break
       default:
         break
     }
   }
-
+ /// extra function
   getPages = (tableName) => formatObjectToArray(this.database[tableName].disk.content)
 
   getTable = (pages) => {

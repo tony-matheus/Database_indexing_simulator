@@ -7,8 +7,12 @@ export default class Parser {
 
   constructor() {
     this.database = {}
-    this.graph = []
-    this.simpleGraph = []
+    this.graph = {
+      6: { target: '2', label: 'Pegar Paginas de generico', step: 'hello', position: { x: 250, y: 70 * 10 } }
+    }
+    this.uiGraph = [
+      { '6': { target: [2],  label: 'Pegar Paginas de generico', step: 'hello' }, position: { x: 250, y: 70 * 10 } }
+    ]
     this.graphId = 1
   }
 
@@ -64,6 +68,9 @@ export default class Parser {
 
   select = ({ which, table, where = '' }) => {
     if (where) {
+      if( table === 'empregado' && where[0] === '>'){
+
+      }
       // function ler pages para pegar table
       // function pegar table
       // pegar a outra tabela
@@ -71,6 +78,9 @@ export default class Parser {
       // percorrer a tabela e achar salario > 1000 => tabela unica menor
       // filtrar a tabela por nome e salario => retorno uma tabela com nome salario
       // empregado =>  filtro de tabela => resultado final?
+
+
+      // look for another tables
       return console.log(`selecionar ${which} na tabela ${table} onde ${where[0]} for ${where[1]} que ${where[2]}`)
     }
     // select * from Table
@@ -81,9 +91,8 @@ export default class Parser {
   // Search Processor
 
   startSelect = (fields, tableName, hasWhere = false) => {
-    this.graph = []
+    // this.graph = {}
     if (hasWhere) {
-      // look for another tables
     }
 
     return this.treatSimpleSelect(fields.toLowerCase().trim(), tableName)
@@ -92,43 +101,26 @@ export default class Parser {
   treatSimpleSelect = (fields, tableName) => {
     let id = 1
     if (fields === '*' || fields === 'all') {
-      this.addSimpleNode('Pegar Paginas da' + tableName, id, {
+      this.addNode('Pegar Paginas da' + tableName, id, {
         doWhat: 'getPages',
         tableName
       }, id + 1)
       id += 1
 
-      this.addSimpleNode('Juntar Paginas da' + tableName, id, {
+      this.addNode('Juntar Paginas da' + tableName, id, {
         doWhat: 'getTable',
         tableName
       }, id + 1)
       id += 1
 
-      this.addSimpleNode('exibir resultado da consulta', id, {
+      this.addNode('exibir resultado da consulta', id, {
         doWhat: 'showResult',
         tableName
       })
-      // this.addNode('Pegar Paginas da ' + tableName, id)
-      // const pages = this.getPages(tableName)
-      // id += 1
-      // this.addNode('Juntar Paginas do ' + tableName, id, id - 1, id)
-      // const table = this.getTable(pages)
-      // id += 1
-      // this.addNode('Exibir Tabela Resultado', id, id - 1, id)
       return
     }
 
-    // this.addNode('Pegar Paginas da ' + tableName, id)
-    // const pages = this.getPages(tableName)
-    // id += 1
-    // this.addNode('Juntar Paginas do ' + tableName, id, id - 1, id)
-    // const table = this.getTable(pages)
-    // id += 1
-    // this.addNode('Filtrar tabela resultado com colunas selecionads', id, id - 1, id)
-    // id += 1
-    // const filteredTable = this.filterTableBySearch(table)
-    // console.log(filteredTable)
-    // this.addNode('Exibir Tabela Resultado', id, id - 1, id)
+    // select nome, salario from Empregado where salario > 1000
   }
 
   getPages = (tableName) => formatObjectToArray(this.database[tableName].disk.content)
@@ -148,15 +140,9 @@ export default class Parser {
     })
   }
 
-  addSimpleNode = (label, id, step, target = '') => {
-    this.simpleGraph.push({ [id]: { target: [target], label, step }, position: { x: 250, y: 70 * id } })
-  }
-
-  addNode = (label, id, source = '', target = '') => {
-    this.graph.push({ id: id.toString(), data: { label }, position: { x: 250, y: 70 * id } })
-    if (source) {
-      this.graph.push({ id: `e${source}-${target}`, source: source.toString(), target: target.toString(), animated: true })
-    }
+  addNode = (label, id, step, target = '') => {
+    this.graph[id.toString()] = { target: target.toString(), label, step }
+    this.uiGraph.push({ [id]: { target: [target], label }, position: { x: 250, y: 70 * id } })
   }
 }
 /*
