@@ -7,12 +7,8 @@ export default class Parser {
 
   constructor() {
     this.database = {}
-    this.graph = {
-      6: { target: '2', label: 'Pegar Paginas de generico', step: 'hello', position: { x: 250, y: 70 * 10 } }
-    }
-    this.uiGraph = [
-      { '6': { target: [2],  label: 'Pegar Paginas de generico', step: 'hello' }, position: { x: 250, y: 70 * 10 } }
-    ]
+    this.graph = { }
+    this.uiGraph = []
     this.graphId = 1
   }
 
@@ -51,7 +47,7 @@ export default class Parser {
 
   getColumns = (columns, primaryKeyColumn) => this.findTableColumns(columns).filter(column => !primaryKeyColumn.trim().includes(column.name))
 
-  findTableColumns = (columns, ) => {
+  findTableColumns = (columns) => {
     columns = testQuerie(columns, createTableSubRegex)
     return this.turnRegexToColumnInfo(columns)
   }
@@ -68,9 +64,10 @@ export default class Parser {
 
   select = ({ which, table, where = '' }) => {
     if (where) {
-      if( table === 'empregado' && where[0] === '>'){
+      this.startSelect(which, table, where)
+      // if( table === 'empregado' && where[0] === '>'){
 
-      }
+      // }
       // function ler pages para pegar table
       // function pegar table
       // pegar a outra tabela
@@ -90,37 +87,69 @@ export default class Parser {
 
   // Search Processor
 
-  startSelect = (fields, tableName, hasWhere = false) => {
+  startSelect = (fields, tableName, where = '') => {
     // this.graph = {}
-    if (hasWhere) {
+    if (where) {
+      return this.treatSelectWhere(fields, tableName, where)
     }
 
     return this.treatSimpleSelect(fields.toLowerCase().trim(), tableName)
   }
 
   treatSimpleSelect = (fields, tableName) => {
-    let id = 1
+    this.treatDataFromTable(tableName)
+    this.treatSelectCondition(fields, tableName)
+
+    // select nome, salario from Empregado where salario > 1000
+  }
+
+  treatSelectWhere = (fields, tableName, where) => {
+    this.treatDataFromTable(tableName)
+    // if(this.hasAnotherTable()) { }
+    this.treatWhereCondition(where, tableName)
+    this.treatSelectCondition(fields, tableName)
+  }
+
+  treatDataFromTable = (tableName) => {
+    this.addNode('Pegar Paginas da ' + tableName, this.graphId, {
+      doWhat: 'getPages',
+      tableName
+    }, this.graphId + 1)
+    this.graphId += 1
+
+    this.addNode('Juntar Paginas da ' + tableName, this.graphId, {
+      doWhat: 'getTable',
+      tableName
+    }, this.graphId + 1)
+    this.graphId += 1
+  }
+
+  treatSelectCondition = (fields, tableName) => {
     if (fields === '*' || fields === 'all') {
-      this.addNode('Pegar Paginas da' + tableName, id, {
-        doWhat: 'getPages',
-        tableName
-      }, id + 1)
-      id += 1
-
-      this.addNode('Juntar Paginas da' + tableName, id, {
-        doWhat: 'getTable',
-        tableName
-      }, id + 1)
-      id += 1
-
-      this.addNode('exibir resultado da consulta', id, {
+      return this.addNode('exibir resultado da consulta ', this.graphId, {
         doWhat: 'showResult',
         tableName
       })
-      return
     }
+    const columns = this.filterSelectFields(fields)
+    if(columns.length > 0){
+      return this.addNode('filtrar as colunas e retornar somente ' + columns.join(' '), this.graphId, {
+        doWhat: 'filterColumns',
+        columns,
+        tableName
+      })
+    }
+    console.log(this.filterSelectFields(fields))
+  }
 
-    // select nome, salario from Empregado where salario > 1000
+  treatWhereCondition = (where, tableName) => {
+    this.addNode('filtrar as tuplas por ' + where.join(' '), this.graphId, {
+      doWhat: 'treatWhere',
+      where,
+      operator: 'tableScan',
+      tableName
+    }, this.graphId + 1)
+    this.graphId += 1
   }
 
   getPages = (tableName) => formatObjectToArray(this.database[tableName].disk.content)
@@ -144,6 +173,8 @@ export default class Parser {
     this.graph[id.toString()] = { target: target.toString(), label, step }
     this.uiGraph.push({ [id]: { target: [target], label }, position: { x: 250, y: 70 * id } })
   }
+
+  filterSelectFields = (fields) => fields.trim().split(',').map(field => field.trim())
 }
 /*
 select * from table

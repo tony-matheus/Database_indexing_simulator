@@ -76,6 +76,15 @@ export default class QueryProcessor {
       case 'getBuckets':
 
        break
+      case 'filterColumns':
+        this.intermedResults.push(this.getSelectColumns(step.columns, this.intermedResults[this.stepIndex - 1]))
+        this.stepIndex += 1
+        break;
+      case 'treatWhere':
+        const whereTable = this.tableScanWhere(this.intermedResults[this.stepIndex - 1], step.where)
+        this.intermedResults.push(whereTable)
+        this.stepIndex += 1
+        break
       case 'showResult':
         this.intermedResults.push(this.intermedResults[this.stepIndex - 1])
         break
@@ -90,5 +99,39 @@ export default class QueryProcessor {
     let table = []
     pages.map(page => Object.values(page.value.content).map(tuple => table.push(tuple)))
     return table
+  }
+
+  tableScanWhere = (table, where) => {
+    const [field, condition,  testValue] = where
+    let filteredTable = []
+    table.map(tuple => {
+      if(this.treatWhereConditon(tuple[field.trim()], condition, testValue))
+        filteredTable.push(tuple)
+    })
+    return filteredTable
+  }
+
+  treatWhereConditon = (value, condition, testValue) => {
+    switch (condition) {
+      case '>':
+        return value > testValue
+      case '<':
+        return value < testValue
+      case '=':
+        return value = testValue
+      default:
+        return false
+    }
+  }
+
+  getSelectColumns = (columns, table) => {
+    const keys = Object.keys(table[0])
+    const differences = _.difference(keys, columns)
+    return table.map(tuple => {
+      let copyTuple = {}
+      Object.assign(copyTuple, tuple)
+      differences.map(diff => { delete copyTuple[diff] })
+      return copyTuple
+    })
   }
 }

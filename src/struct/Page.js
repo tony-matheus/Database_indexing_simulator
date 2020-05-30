@@ -1,7 +1,6 @@
 export default class Page {
 
   constructor (content, key, pk) {
-    console.warn(pk)
     this.key = key;
     this.name = 'Page ' + key;
     this.content = this.format(content, pk);
