@@ -46,7 +46,6 @@ const setTupleColumnValue = (columns, line, fk, tableReferences) => {
 }
 
 const generateForeignKey = (tableRefences) => {
-  console.log(tableRefences)
   if (tableRefences.trim() === 'departamento') { return Math.floor((Math.random() * 20) + 1) }
   return Math.floor((Math.random() * 10000) + 1)
 }

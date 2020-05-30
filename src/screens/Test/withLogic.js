@@ -22,12 +22,13 @@ export default Component => withConnect(props => {
   const parser = useMemo(() => new Parser(), [])
   const queryProcessor = useMemo(() => new QueryProcessor(), [])
   const [search, setSearch] = useState('SELECT * from departamento')
+  // const [search, setSearch] = useState('SELECT nome, salario from empregados where salario > 1000')
   const [elements, setElements] = useState([])
 
   const [tables, setTables] = useState({
     departamento: {},
-    empregados: {},
-    dependentes: {}
+    empregado: {},
+    dependente: {}
   })
 
   const settings = {
@@ -38,11 +39,17 @@ export default Component => withConnect(props => {
   }
 
   useEffect(() => {
-    generateDepartaments()
-    generateEmployers()
+    const departamento = generateDepartaments()
+    const empregado = generateEmployers()
+    setTables({
+      ...tables,
+      departamento,
+      empregado
+    })
   }, [])
 
   useEffect(() => {
+    console.log(tables)
     parser.updateDatabase(tables)
     queryProcessor.updateDatabase(tables)
     props.saveDatabase(tables)
@@ -70,34 +77,23 @@ export default Component => withConnect(props => {
     // const departamentsPages = formatObjectToArray(departamentsDisk.content)
     // const departamentsBuckets = departamentsDisk.hash.buckets()
     // const departamentsOverflows = departamentsBuckets.flatMap(bucket => bucket.getOverflowBuckets())
-    setTables({
-      ...tables,
-      departamento: {
-        disk
-      }
-    })
+    return { disk }
   }
 
   const generateEmployers = () => {
-    // const employersTable = parser.processSQL(`
-    //   create table empregado (
-    //     matri int not null,nome varchar(60) not null,salario decimal(16,2) not null, lotacao int not null,
-    //     constraint pk_matri
-    //       primary key(matri),
-    //     constraint fk_lotacao
-    //       foreign key(lotacao)
-    //       references departamento
-    //   )
-    // `)
-    // console.log(employersTable.newContent[0])
+    const employersTable = parser.processSQL(`
+      create table empregado (
+        matri int not null,nome varchar(60) not null,salario decimal(16,2) not null, lotacao int not null,
+        constraint pk_matri
+          primary key(matri),
+        constraint fk_lotacao
+          foreign key(lotacao)
+          references departamento
+      )
+    `)
 
-    // const disk = new Disk(employersTable.newContent, settings)
-    // setTables({
-    //   ...tables,
-    //   empregados: {
-    //     disk
-    //   }
-    // })
+    const disk = new Disk(employersTable.newContent, settings, employersTable.primaryKey)
+    return { disk }
   }
 
   // const generateDependents = () => {
