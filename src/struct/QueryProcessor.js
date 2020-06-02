@@ -8,6 +8,12 @@ export default class QueryProcessor {
     this.processedNodes = []
   }
 
+  clear = () => {
+    this.intermedResults = []
+    this.stepIndex = 0
+    this.processedNodes = []
+  }
+
   processGraph = (graph) => {
     const firstNode = Object.keys(graph)[0]
     this.startProcessGraph(graph, firstNode)
@@ -31,7 +37,6 @@ export default class QueryProcessor {
     return 'hello'
   }
 
-
   checkIfNodeIsProcessed = (node) => this.processedNodes.filter(processedNode => processedNode === node).length > 0
 
   thereIsAnotherEdge = (graph, key) => {
@@ -53,35 +58,45 @@ export default class QueryProcessor {
     this.database = database
   }
 
-  processNode = (node) => {
+  processNode = (node, operator) => {
     console.log(node.label)
     const step = node.step
-    this.processStep(step)
+    this.processStep(step, operator)
   }
 
-  processStep = (step) => {
+  processStep = (step, operator) => {
     // TODO: put an hasMultipleTables?
     const { doWhat, tableName } = step
     // return
     switch (doWhat) {
+      case 'getBuckets':
+          this.intermedResults.push(this.getBuckets(tableName))
+          this.stepIndex += 1
+          break
+      case 'getBucket':
+          this.intermedResults.push(this.getBucket(this.intermedResults[this.stepIndex - 1], step.key))
+          this.stepIndex += 1
+          break
       case 'getPages':
         this.intermedResults.push(this.getPages(tableName))
         this.stepIndex += 1
         break
+      case 'getPage':
+          this.intermedResults.push(this.getPage(tableName, this.intermedResults[this.stepIndex - 1]))
+          this.stepIndex += 1
+          break
       case 'getTable':
-        this.intermedResults.push(this.getTable(this.intermedResults[0]))
+        this.intermedResults.push(this.getTable(this.intermedResults[this.stepIndex - 1]))
         this.stepIndex += 1
         // if ( + de uma tabela)
         break
-      case 'getBuckets':
-
-       break
       case 'filterColumns':
         this.intermedResults.push(this.getSelectColumns(step.columns, this.intermedResults[this.stepIndex - 1]))
         this.stepIndex += 1
         break;
-      case 'treatWhere':
-        const whereTable = this.tableScanWhere(this.intermedResults[this.stepIndex - 1], step.where)
+      case 'treatWhere': 
+        console.log(step.operator)
+        const whereTable = this[step.operator](this.intermedResults[this.stepIndex - 1], step.where)
         this.intermedResults.push(whereTable)
         this.stepIndex += 1
         break
@@ -95,13 +110,31 @@ export default class QueryProcessor {
  /// extra function
   getPages = (tableName) => formatObjectToArray(this.database[tableName].disk.content)
 
+  getBuckets = (tableName) => Object.assign([], this.database[tableName].disk.hash.table)
+  
+  getBucket = (buckets, key) => {
+    let tupleAddress
+    buckets.map(bucket => {
+      const address = bucket.get(key)
+      if (address) {
+        tupleAddress=address
+      }
+    })
+    return tupleAddress
+  }
+
+  getPage = (tableName, tupleAddress) => {
+    if (!tupleAddress) return []
+    return [{ key: tupleAddress.pageKey, value: this.database[tableName].disk.content[tupleAddress.pageKey]}]
+  }
+  
   getTable = (pages) => {
     let table = []
     pages.map(page => Object.values(page.value.content).map(tuple => table.push(tuple)))
     return table
   }
 
-  tableScanWhere = (table, where) => {
+  tableScan = (table, where) => {
     const [field, condition,  testValue] = where
     let filteredTable = []
     table.map(tuple => {
@@ -110,6 +143,8 @@ export default class QueryProcessor {
     })
     return filteredTable
   }
+
+  indexSeek = (table, where) => [table.find(row=> row[where[0]] == where[2])]
 
   treatWhereConditon = (value, condition, testValue) => {
     switch (condition) {

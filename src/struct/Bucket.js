@@ -2,6 +2,7 @@
 export default class Bucket {
   constructor(key, level = 0, settings) {
     this.key = level ? `${key.toString().split('_')[0]}_${level}` : key;
+    this.name = `Bucket ${this.key}`
     this.level = level;
     this.content = {};
     this.space = settings.BUCKET_SIZE;
@@ -24,8 +25,8 @@ export default class Bucket {
         pageKey: this.content[tuplaKey],
         tuplaKey,
         accessCost: access
-      } :
-      this.bucketOverflow.get(tuplaKey, access+1)
+      } : this.bucketOverflow ? this.bucketOverflow.get(tuplaKey, access+1) : null
+      
 
   size = () => Object.keys(this.content).length;
 

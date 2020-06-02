@@ -12,6 +12,12 @@ export default class Parser {
     this.graphId = 1
   }
 
+  clear = () => {
+    this.graph = {}
+    this.uiGraph = []
+    this.graphId = 1
+  }
+
   processSQL = (sql) => this.searchAction(this.format(sql))
 
   updateDatabase = (database) => {
@@ -104,19 +110,41 @@ export default class Parser {
   }
 
   treatSelectWhere = (fields, tableName, where) => {
-    this.treatDataFromTable(tableName)
+    this.treatDataFromTable(tableName, where)
     // if(this.hasAnotherTable()) { }
     this.treatWhereCondition(where, tableName)
     this.treatSelectCondition(fields, tableName)
+    
   }
 
-  treatDataFromTable = (tableName) => {
-    this.addNode('Pegar Paginas da ' + tableName, this.graphId, {
-      doWhat: 'getPages',
-      tableName
-    }, this.graphId + 1)
-    this.graphId += 1
+  treatDataFromTable = (tableName, where) => {
+    if (where && this.ifUseIndexSeek(where)) {
+      this.addNode('Carregar buckets em memoria', this.graphId, {
+        doWhat: 'getBuckets',
+        tableName,
+      }, this.graphId + 1)
+      this.graphId += 1
 
+      this.addNode('Buscar bucket', this.graphId, {
+        doWhat: 'getBucket',
+        key: where[2]
+      }, this.graphId + 1)
+      this.graphId += 1
+
+      this.addNode('Pegar Pagina do(a) ' + tableName, this.graphId, {
+        doWhat: 'getPage',
+        tableName,
+        key: where[2]
+      }, this.graphId + 1)
+      this.graphId += 1
+      
+    } else {
+      this.addNode('Pegar Paginas da ' + tableName, this.graphId, {
+        doWhat: 'getPages',
+        tableName
+      }, this.graphId + 1)
+      this.graphId += 1
+    }
     this.addNode('Juntar Paginas da ' + tableName, this.graphId, {
       doWhat: 'getTable',
       tableName
@@ -125,7 +153,7 @@ export default class Parser {
   }
 
   treatSelectCondition = (fields, tableName) => {
-    if (fields === '*' || fields === 'all') {
+    if (fields.replace(' ', '') === '*' || fields === 'all') {
       return this.addNode('exibir resultado da consulta ', this.graphId, {
         doWhat: 'showResult',
         tableName
@@ -142,11 +170,15 @@ export default class Parser {
     console.log(this.filterSelectFields(fields))
   }
 
+  ifUseIndexSeek = (where) =>  (where[0]==='cod_dep' || where[0]==='matri') && where[1]==='=' && 'indexSeek' 
+  
+  getOperator = (where) => this.ifUseIndexSeek(where) || 'tableScan'
+
   treatWhereCondition = (where, tableName) => {
     this.addNode('filtrar as tuplas por ' + where.join(' '), this.graphId, {
       doWhat: 'treatWhere',
       where,
-      operator: 'tableScan',
+      operator: this.getOperator(where),
       tableName
     }, this.graphId + 1)
     this.graphId += 1

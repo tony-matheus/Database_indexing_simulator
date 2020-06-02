@@ -24,6 +24,7 @@ export default Component => withConnect(props => {
   // const [search, setSearch] = useState('SELECT * from departamento')
   const [search, setSearch] = useState('SELECT nome, salario from empregado where salario > 1000')
   const [elements, setElements] = useState([])
+  const [intermediateResults, setIntermediateResults] = useState([])
 
   const [tables, setTables] = useState({
     departamento: {},
@@ -32,10 +33,10 @@ export default Component => withConnect(props => {
   })
 
   const settings = {
-    BUCKET_SIZE: 974,
+    BUCKET_SIZE: 10,
     HASH_NUMBER: 479,
     NUMBER_MAX_PAGES: 200,
-    PAGE_SIZE: 10
+    PAGE_SIZE: 50
   }
 
   useEffect(() => {
@@ -54,10 +55,22 @@ export default Component => withConnect(props => {
     props.saveDatabase(tables)
   }, [tables])
 
-  const doSearch = () => {
-    parser.processSQL(search)
-    queryProcessor.processGraph(parser.graph)
-    setElements([...getGraphLib(parser.uiGraph)])
+  const clear = () => {
+    parser.clear()
+    queryProcessor.clear()
+  }
+
+  const doSearch = (mock=undefined) => {
+    clear()
+    try {
+      parser.processSQL(mock ? mock : search)
+      queryProcessor.processGraph(parser.graph, parser.operator)
+      setIntermediateResults(queryProcessor.intermedResults)
+      setElements([...getGraphLib(parser.uiGraph)])
+    } catch (err) {
+      console.log('-> err: ', err)
+      alert('Consulta mal formada ou inválida, por favor verifique!')
+    }
   }
 
   const onChange = (evt) => {
@@ -130,9 +143,10 @@ export default Component => withConnect(props => {
   return (
     <Component
       onChange={onChange}
-      doSearch={() => doSearch()}
+      doSearch={doSearch}
       elements={elements}
       changeRoute={changeRoute}
+      intermediateResults={intermediateResults}
     />
   )
 })
