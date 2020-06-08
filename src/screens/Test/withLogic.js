@@ -22,7 +22,8 @@ export default Component => withConnect(props => {
   const parser = useMemo(() => new Parser(), [])
   const queryProcessor = useMemo(() => new QueryProcessor(), [])
   // const [search, setSearch] = useState('SELECT * from departamento')
-  const [search, setSearch] = useState('SELECT nome, salario from empregado where salario > 1000')
+  // const [search, setSearch] = useState('SELECT nome, salario from empregado where salario > 1000')
+  const [search, setSearch] = useState('SELECT * from departamento where cod_dep = 4')
   const [elements, setElements] = useState([])
   const [intermediateResults, setIntermediateResults] = useState([])
 
@@ -60,10 +61,10 @@ export default Component => withConnect(props => {
     queryProcessor.clear()
   }
 
-  const doSearch = (mock=undefined) => {
+  const doSearch = (mock = undefined) => {
     clear()
     try {
-      parser.processSQL(mock ? mock : search)
+      parser.processSQL(mock || search)
       queryProcessor.processGraph(parser.graph, parser.operator)
       setIntermediateResults(queryProcessor.intermedResults)
       setElements([...getGraphLib(parser.uiGraph)])

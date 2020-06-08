@@ -28,10 +28,10 @@ export default class QueryProcessor {
         this.processedNodes.push(node)
       })
     }
-    if(!this.checkIfNodeIsProcessed(key)){
+    if (!this.checkIfNodeIsProcessed(key)) {
       this.processNode(graph[key])
       this.processedNodes.push(key)
-      if(graph[key].target !== '')
+      if (graph[key].target !== '')
         return this.startProcessGraph(graph, graph[key].target)
     }
     return 'hello'
@@ -70,34 +70,47 @@ export default class QueryProcessor {
     // return
     switch (doWhat) {
       case 'getBuckets':
-          this.intermedResults.push(this.getBuckets(tableName))
-          this.stepIndex += 1
-          break
+        this.intermedResults.push(this.getBuckets(tableName))
+        this.stepIndex += 1
+        break
       case 'getBucket':
-          this.intermedResults.push(this.getBucket(this.intermedResults[this.stepIndex - 1], step.key))
-          this.stepIndex += 1
-          break
+        this.intermedResults.push(this.getBucket(this.intermedResults[this.stepIndex - 1], step.key))
+        this.stepIndex += 1
+        break
       case 'getPages':
         this.intermedResults.push(this.getPages(tableName))
         this.stepIndex += 1
         break
       case 'getPage':
-          this.intermedResults.push(this.getPage(tableName, this.intermedResults[this.stepIndex - 1]))
-          this.stepIndex += 1
-          break
+        this.intermedResults.push(this.getPage(tableName, this.intermedResults[this.stepIndex - 1]))
+        this.stepIndex += 1
+        break
       case 'getTable':
         this.intermedResults.push(this.getTable(this.intermedResults[this.stepIndex - 1]))
         this.stepIndex += 1
         // if ( + de uma tabela)
         break
+      case 'getTableOrdered':
+        const pages = this.getPages(tableName)
+        const table = this.getTable(pages)
+        this.intermedResults.push(table.sort(tuple => tuple['cod_dep']))
+        this.stepIndex += 1
+        break;
       case 'filterColumns':
         this.intermedResults.push(this.getSelectColumns(step.columns, this.intermedResults[this.stepIndex - 1]))
         this.stepIndex += 1
         break;
-      case 'treatWhere': 
+      case 'treatWhere':
         console.log(step.operator)
         const whereTable = this[step.operator](this.intermedResults[this.stepIndex - 1], step.where)
         this.intermedResults.push(whereTable)
+        this.stepIndex += 1
+        break
+      case 'treatWhereBinary':
+        const lastResult = this.intermedResults[this.stepIndex - 1]
+        console.log(lastResult)
+        const result = this.whereBinary(lastResult, step.where[0].trim(), parseInt(step.where[2].trim()), 0, lastResult.length - 1)
+        this.intermedResults.push([result])
         this.stepIndex += 1
         break
       case 'showResult':
@@ -107,17 +120,30 @@ export default class QueryProcessor {
         break
     }
   }
- /// extra function
+  /// extra function
+  whereBinary = (table, field, value, start, end) => {
+    if (start > end) return [];
+
+    const mid = Math.floor((start + end) / 2);
+
+    if (table[mid][field] === value) return table[mid];
+
+    if (table[mid][field] > value)
+      return this.whereBinary(table, field, value, start, mid - 1);
+
+    return this.whereBinary(table, field, value, mid + 1, end);
+  }
+
   getPages = (tableName) => formatObjectToArray(this.database[tableName].disk.content)
 
   getBuckets = (tableName) => Object.assign([], this.database[tableName].disk.hash.table)
-  
+
   getBucket = (buckets, key) => {
     let tupleAddress
     buckets.map(bucket => {
       const address = bucket.get(key)
       if (address) {
-        tupleAddress=address
+        tupleAddress = address
       }
     })
     return tupleAddress
@@ -125,9 +151,9 @@ export default class QueryProcessor {
 
   getPage = (tableName, tupleAddress) => {
     if (!tupleAddress) return []
-    return [{ key: tupleAddress.pageKey, value: this.database[tableName].disk.content[tupleAddress.pageKey]}]
+    return [{ key: tupleAddress.pageKey, value: this.database[tableName].disk.content[tupleAddress.pageKey] }]
   }
-  
+
   getTable = (pages) => {
     let table = []
     pages.map(page => Object.values(page.value.content).map(tuple => table.push(tuple)))
@@ -135,16 +161,16 @@ export default class QueryProcessor {
   }
 
   tableScan = (table, where) => {
-    const [field, condition,  testValue] = where
+    const [field, condition, testValue] = where
     let filteredTable = []
     table.map(tuple => {
-      if(this.treatWhereConditon(tuple[field.trim()], condition, testValue))
+      if (this.treatWhereConditon(tuple[field.trim()], condition, testValue))
         filteredTable.push(tuple)
     })
     return filteredTable
   }
 
-  indexSeek = (table, where) => [table.find(row=> row[where[0]] == where[2])]
+  indexSeek = (table, where) => [table.find(row => row[where[0]] == where[2])]
 
   treatWhereConditon = (value, condition, testValue) => {
     switch (condition) {

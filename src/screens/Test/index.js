@@ -3,7 +3,7 @@ import withLogic from './withLogic'
 import ReactFlow from 'react-flow-renderer'
 import './styles.css'
 import Table from '../../components/Table'
-import {Button, ButtonGroup, Paper } from '@material-ui/core';
+import { Button, ButtonGroup, Paper } from '@material-ui/core'
 
 const Test = ({ onChange, doSearch, elements, changeRoute, intermediateResults }) => {
   const [currentInterResult, setCurrentInterResult] = useState(null)
@@ -11,25 +11,25 @@ const Test = ({ onChange, doSearch, elements, changeRoute, intermediateResults }
   return (
     <Paper className='background'>
       <div className='info'>
-        <Paper style={{borderRadius:30}} className='flow-container'>
+        <Paper style={{ borderRadius: 30 }} className='flow-container'>
           <span className='title'>Gerenciador de Consultas:</span>
-          <input className='input' onChange={onChange} onKeyDown={({key})=> key==='Enter' && doSearch()} />
-          <div style={{backgroundColor:'white', borderRadius:40, justifyContent:''}}>
-            <ReactFlow 
-              className='flow' 
-              elements={elements} 
-              onElementClick={node=>setCurrentInterResult(intermediateResults[parseInt(node.id) - 1])} 
+          <input className='input' onChange={onChange} onKeyDown={({ key }) => key === 'Enter' && doSearch()} />
+          <div style={{ backgroundColor: 'white', borderRadius: 40, justifyContent: '' }}>
+            <ReactFlow
+              className='flow'
+              elements={elements}
+              onElementClick={node => setCurrentInterResult(intermediateResults[parseInt(node.id) - 1])}
             />
             {
-              intermediateResults.length>0 &&
-              <Table data={intermediateResults[intermediateResults.length - 1]} />
+              intermediateResults.length > 0 &&
+                <Table data={intermediateResults[intermediateResults.length - 1]} />
             }
           </div>
         </Paper>
         {
-          currentInterResult!==null &&
-            <Paper style={{borderRadius:40}} className='result-container'>
-              <span className='title'>Passo intermediário:</span><br/>
+          currentInterResult !== null &&
+            <Paper style={{ borderRadius: 40 }} className='result-container'>
+              <span className='title'>Passo intermediário:</span><br />
               <Table data={currentInterResult} />
             </Paper>
         }

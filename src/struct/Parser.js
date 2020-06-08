@@ -114,11 +114,18 @@ export default class Parser {
     // if(this.hasAnotherTable()) { }
     this.treatWhereCondition(where, tableName)
     this.treatSelectCondition(fields, tableName)
-    
+
   }
 
   treatDataFromTable = (tableName, where) => {
-    if (where && this.ifUseIndexSeek(where)) {
+    if(where[1] === '=' && this.isPrimaryKey(where[0])){
+      this.addNode('Juntar Paginas da ' + tableName, this.graphId, {
+        doWhat: 'getTableOrdered',
+        tableName
+      }, this.graphId + 1)
+      this.graphId += 1
+      return
+    } else if (where && this.ifUseIndexSeek(where)) {
       this.addNode('Carregar buckets em memoria', this.graphId, {
         doWhat: 'getBuckets',
         tableName,
@@ -137,7 +144,7 @@ export default class Parser {
         key: where[2]
       }, this.graphId + 1)
       this.graphId += 1
-      
+
     } else {
       this.addNode('Pegar Paginas da ' + tableName, this.graphId, {
         doWhat: 'getPages',
@@ -170,18 +177,28 @@ export default class Parser {
     console.log(this.filterSelectFields(fields))
   }
 
-  ifUseIndexSeek = (where) =>  (where[0]==='cod_dep' || where[0]==='matri') && where[1]==='=' && 'indexSeek' 
-  
+  ifUseIndexSeek = (where) =>  (where[0]==='cod_dep' || where[0]==='matri') && where[1]==='=' && 'indexSeek'
+
   getOperator = (where) => this.ifUseIndexSeek(where) || 'tableScan'
 
   treatWhereCondition = (where, tableName) => {
-    this.addNode('filtrar as tuplas por ' + where.join(' '), this.graphId, {
-      doWhat: 'treatWhere',
-      where,
-      operator: this.getOperator(where),
-      tableName
-    }, this.graphId + 1)
-    this.graphId += 1
+    if(where[1] === '=' && this.isPrimaryKey(where[0])){
+      this.addNode('filtrar as tuplas por ' + where.join(' '), this.graphId, {
+        doWhat: 'treatWhereBinary',
+        where,
+        operator: this.getOperator(where),
+        tableName
+      }, this.graphId + 1)
+      this.graphId += 1
+    } else {
+      this.addNode('filtrar as tuplas por ' + where.join(' '), this.graphId, {
+        doWhat: 'treatWhere',
+        where,
+        operator: this.getOperator(where),
+        tableName
+      }, this.graphId + 1)
+      this.graphId += 1
+    }
   }
 
   getPages = (tableName) => formatObjectToArray(this.database[tableName].disk.content)
@@ -207,6 +224,8 @@ export default class Parser {
   }
 
   filterSelectFields = (fields) => fields.trim().split(',').map(field => field.trim())
+
+  isPrimaryKey = (field) => ['matri', 'cod_dep'].includes(field.trim())
 }
 /*
 select * from table
