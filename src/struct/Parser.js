@@ -118,7 +118,7 @@ export default class Parser {
   }
 
   treatDataFromTable = (tableName, where) => {
-    if(where[1] === '=' && this.isPrimaryKey(where[0])){
+    if(where && where[1] === '=' && this.isPrimaryKey(where[0])){
       this.addNode('Juntar Paginas da ' + tableName, this.graphId, {
         doWhat: 'getTableOrdered',
         tableName
