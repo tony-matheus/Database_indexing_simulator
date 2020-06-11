@@ -48,10 +48,16 @@ export default class Parser {
   }
 
   createTable = ({ tableName, columns, primaryKeyColumn, foreignKey, tableReferences }) => {
-    return new Table(tableName, this.getColumns(columns, primaryKeyColumn), primaryKeyColumn, foreignKey, tableReferences)
+    return new Table(tableName, this.getColumns(columns, primaryKeyColumn, tableName), primaryKeyColumn, foreignKey, tableReferences)
   }
 
-  getColumns = (columns, primaryKeyColumn) => this.findTableColumns(columns).filter(column => !primaryKeyColumn.trim().includes(column.name))
+  getColumns = (columns, primaryKeyColumn, tableName) => {
+    columns = this.findTableColumns(columns)
+    if(tableName !== 'dependentes') {
+      return columns.filter(column => !primaryKeyColumn.trim().includes(column.name))
+    }
+    return columns
+  }
 
   findTableColumns = (columns) => {
     columns = testQuerie(columns, createTableSubRegex)

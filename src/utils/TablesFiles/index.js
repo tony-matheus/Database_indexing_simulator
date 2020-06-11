@@ -1,6 +1,7 @@
 import { departaments } from './departaments'
 import { employers } from './employers'
-import { getRandomTupleKey, shuffle, createTupleKeys } from '../random'
+import { dependents } from './dependents'
+import { getRandomTupleKey, shuffle, createTupleKeys, getRandomPageKey } from '../random'
 
 const returnTableContent = (tableName, columns, pk, fk = '', tableReferences = '') => {
   // todo:
@@ -14,7 +15,7 @@ const returnTableContent = (tableName, columns, pk, fk = '', tableReferences = '
     case 'empregado':
       return formatTuple(readTextFile(employers), columns, pk, fk, tableReferences)
     case 'dependentes':
-      return formatTuple(readTextFile(employers), columns, pk, fk, tableReferences)
+      return formatTupleComposite(readTextFile(dependents), columns, pk, fk, tableReferences)
     default:
       return 'didn\'t work'
   }
@@ -35,6 +36,23 @@ const formatTuple = (lines, columns, pk, fk = '', tableReferences) => {
   return shuffle(tuples)
 }
 
+const formatTupleComposite = (lines, columns, pk, fk = '', tableReferences) => {
+  const tuples = []
+  lines.map(line => tuples.push({
+    ...setTupleColumnCompositeValue(columns, line.split('|'), fk, tableReferences, pk)
+  }))
+  return tuples
+}
+
+const setTupleColumnCompositeValue = (columns, line, fk, tableReferences, pk) => {
+  const foreignKey = generateForeignKey(tableReferences)
+  return {
+    [pk]: `${foreignKey}_${line[0]}`,
+    [columns[0].name]: foreignKey,
+    [columns[1].name]: line[0]
+  }
+}
+
 const setTupleColumnValue = (columns, line, fk, tableReferences) => {
   const response = {}
   columns.map((column, index) => {
@@ -46,8 +64,16 @@ const setTupleColumnValue = (columns, line, fk, tableReferences) => {
 }
 
 const generateForeignKey = (tableRefences) => {
-  if (tableRefences.trim() === 'departamento') { return Math.floor((Math.random() * 20) + 1) }
-  return Math.floor((Math.random() * 10000) + 1)
+  // if (tableRefences.trim() === 'departamento') { }
+  // return Math.floor((Math.random() * 10000) + 1)
+  switch (tableRefences.trim()) {
+    case 'departamento':
+      return Math.floor((Math.random() * 20) + 1)
+    case 'dependentes':
+      return Math.floor((Math.random() * 3000) + 1)
+    default:
+      return Math.floor((Math.random() * 10000) + 1)
+  }
 }
 
 const treatTypeValue = (type, value) => {

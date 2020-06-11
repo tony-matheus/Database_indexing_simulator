@@ -21,9 +21,9 @@ const withConnect = Component => {
 export default Component => withConnect(props => {
   const parser = useMemo(() => new Parser(), [])
   const queryProcessor = useMemo(() => new QueryProcessor(), [])
-  // const [search, setSearch] = useState('SELECT * from departamento')
+  const [search, setSearch] = useState('SELECT * from departamento')
   // const [search, setSearch] = useState('SELECT nome, salario from empregado where salario > 1000')
-  const [search, setSearch] = useState('SELECT * from departamento where cod_dep = 4')
+  // const [search, setSearch] = useState('SELECT * from departamento where cod_dep = 4')
   const [elements, setElements] = useState([])
   const [intermediateResults, setIntermediateResults] = useState([])
 
@@ -43,10 +43,13 @@ export default Component => withConnect(props => {
   useEffect(() => {
     const departamento = generateDepartaments()
     const empregado = generateEmployers()
+    const dependente = generateDependents()
+    debugger
     setTables({
       ...tables,
       departamento,
-      empregado
+      empregado,
+      dependente
     })
   }, [])
 
@@ -109,9 +112,21 @@ export default Component => withConnect(props => {
     return { disk }
   }
 
-  // const generateDependents = () => {
+  const generateDependents = () => {
+    const dependentsTable = parser.processSQL(`
+      create table dependentes (
+        matri_resp int not null, nome varchar(30) not null,
+      constraint pk
+        primary key(matri_resp,nome),
+      constraint fk
+        foreign key(matri_resp)
+        references empregado
+      )
+    `)
 
-  // }
+    const disk = new Disk(dependentsTable.newContent, settings, dependentsTable.primaryKey)
+    return { disk }
+  }
 
   const getGraphLib = (graph) => {
     let list = []
