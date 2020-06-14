@@ -7,7 +7,7 @@ export default class Parser {
 
   constructor() {
     this.database = {}
-    this.graph = { }
+    this.graph = {}
     this.uiGraph = []
     this.graphId = 1
   }
@@ -29,6 +29,23 @@ export default class Parser {
   }
 
   searchAction = (options) => {
+    if (options[6] === 'join' || options[6] === 'JOIN') {
+      const query = {
+        select: options[1],
+        what: options[2],
+        from: options[3],
+        table_name1: options[4],
+        left: options[5],
+        join: options[6],
+        table_name2 : options[7],
+        on: options[8],
+        table_name1on: options[9],
+        column_table1: options[10],
+        table_name2on: options[11],
+        column_table2: options[12]
+      }
+      return console.log(options)
+    }
     switch (options[1].toLowerCase()) {
       case 'select':
         if (options[5] === 'where')
@@ -53,7 +70,7 @@ export default class Parser {
 
   getColumns = (columns, primaryKeyColumn, tableName) => {
     columns = this.findTableColumns(columns)
-    if(tableName !== 'dependentes') {
+    if (tableName !== 'dependentes') {
       return columns.filter(column => !primaryKeyColumn.trim().includes(column.name))
     }
     return columns
@@ -124,7 +141,7 @@ export default class Parser {
   }
 
   treatDataFromTable = (tableName, where) => {
-    if(where && where[1] === '=' && this.isPrimaryKey(where[0])){
+    if (where && where[1] === '=' && this.isPrimaryKey(where[0])) {
       this.addNode('Juntar Paginas da ' + tableName, this.graphId, {
         doWhat: 'getTableOrdered',
         tableName
@@ -167,7 +184,7 @@ export default class Parser {
       })
     }
     const columns = this.filterSelectFields(fields)
-    if(columns.length > 0){
+    if (columns.length > 0) {
       return this.addNode('filtrar as colunas e retornar somente ' + columns.join(' '), this.graphId, {
         doWhat: 'filterColumns',
         columns,
@@ -177,12 +194,12 @@ export default class Parser {
     console.log(this.filterSelectFields(fields))
   }
 
-  ifUseIndexSeek = (where) =>  (where[0]==='cod_dep' || where[0]==='matri') && where[1]==='=' && 'indexSeek'
+  ifUseIndexSeek = (where) => (where[0] === 'cod_dep' || where[0] === 'matri') && where[1] === '=' && 'indexSeek'
 
   getOperator = (where) => this.ifUseIndexSeek(where) || 'tableScan'
 
   treatWhereCondition = (where, tableName) => {
-    if(where[1] === '=' && this.isPrimaryKey(where[0])){
+    if (where[1] === '=' && this.isPrimaryKey(where[0])) {
       this.addNode('filtrar as tuplas por ' + where.join(' '), this.graphId, {
         doWhat: 'treatWhereBinary',
         where,
