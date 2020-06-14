@@ -67,6 +67,7 @@ export default class QueryProcessor {
   processStep = (step, operator) => {
     // TODO: put an hasMultipleTables?
     const { doWhat, tableName } = step
+    let pages
     // return
     switch (doWhat) {
       case 'getBuckets':
@@ -86,12 +87,13 @@ export default class QueryProcessor {
         this.stepIndex += 1
         break
       case 'getTable':
-        this.intermedResults.push(this.getTable(this.intermedResults[this.stepIndex - 1]))
+        pages = this.getPages(tableName)
+        this.intermedResults.push(this.getTable(pages))
         this.stepIndex += 1
         // if ( + de uma tabela)
         break
       case 'getTableOrdered':
-        const pages = this.getPages(tableName)
+        pages = this.getPages(tableName)
         const table = this.getTable(pages)
         this.intermedResults.push(table.sort(tuple => tuple['cod_dep']))
         this.stepIndex += 1

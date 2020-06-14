@@ -151,12 +151,6 @@ export default class Parser {
       }, this.graphId + 1)
       this.graphId += 1
 
-    } else {
-      this.addNode('Pegar Paginas da ' + tableName, this.graphId, {
-        doWhat: 'getPages',
-        tableName
-      }, this.graphId + 1)
-      this.graphId += 1
     }
     this.addNode('Juntar Paginas da ' + tableName, this.graphId, {
       doWhat: 'getTable',
