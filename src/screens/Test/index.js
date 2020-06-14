@@ -3,38 +3,88 @@ import withLogic from './withLogic'
 import ReactFlow from 'react-flow-renderer'
 import './styles.css'
 import Table from '../../components/Table'
-import { Button, ButtonGroup, Paper } from '@material-ui/core'
+import { Button, Paper } from '@material-ui/core'
+import Tables from '../Tables'
+import styled from 'styled-components'
+import VisibilityIcon from '@material-ui/icons/Visibility'
+import VisibilityOffIcon from '@material-ui/icons/VisibilityOff'
+export const VisibleArea = styled.div`
+  ${({ hide }) => hide && `
+    display: none;
+    & * {
+      display: none;
+    }
+  `}
 
-const Test = ({ onChange, doSearch, elements, changeRoute, intermediateResults }) => {
+  height: auto;
+  width: auto;
+`
+
+const Test = ({ onChange, doSearch, elements, changeRoute, intermediateResults, tables }) => {
   const [currentInterResult, setCurrentInterResult] = useState(null)
+  const [hideTables, setHideTables] = useState(false)
+
+  const hideShowTables = () => {
+    setHideTables(!hideTables)
+  }
 
   return (
-    <Paper className='background'>
-      <div className='info'>
-        <Paper style={{ borderRadius: 30 }} className='flow-container'>
-          <span className='title'>Gerenciador de Consultas:</span>
-          <input className='input' onChange={onChange} onKeyDown={({ key }) => key === 'Enter' && doSearch()} />
-          <div style={{ backgroundColor: 'white', borderRadius: 40, justifyContent: '' }}>
-            <ReactFlow
-              className='flow'
-              elements={elements}
-              onElementClick={node => setCurrentInterResult(intermediateResults[parseInt(node.id) - 1])}
-            />
-            {
-              intermediateResults.length > 0 &&
-                <Table data={intermediateResults[intermediateResults.length - 1]} />
-            }
-          </div>
-        </Paper>
-        {
-          currentInterResult !== null &&
-            <Paper style={{ borderRadius: 40 }} className='result-container'>
-              <span className='title'>Passo intermediário:</span><br />
-              <Table data={currentInterResult} />
-            </Paper>
-        }
-      </div>
-    </Paper>
+    <>
+      <Button
+        onClick={() => setHideTables(!hideTables)}
+        color='secondary'
+        variant='contained'
+        style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10 }}
+      >
+        {hideTables
+          ? (
+            <>
+              <VisibilityOffIcon />
+              Table Is Invisible
+            </>
+
+          )
+          : (
+            <>
+              <VisibilityIcon />
+              Table Is Visible
+            </>
+          )}
+
+      </Button>
+      {hideTables
+        ? (
+          <Paper className='background'>
+            <div className='info'>
+              <Paper style={{ borderRadius: 30 }} className='flow-container'>
+                <span className='title'>Gerenciador de Consultas:</span>
+                <input className='input' onChange={onChange} onKeyDown={({ key }) => key === 'Enter' && doSearch()} />
+                <div style={{ backgroundColor: 'white', borderRadius: 40, justifyContent: '' }}>
+                  <ReactFlow
+                    className='flow'
+                    elements={elements}
+                    onElementClick={node => setCurrentInterResult(intermediateResults[parseInt(node.id) - 1])}
+                  />
+                  {
+                    intermediateResults.length > 0 && (
+                      <Table data={intermediateResults[intermediateResults.length - 1]} />
+                    )
+                  }
+                </div>
+              </Paper>
+              {
+                currentInterResult !== null && (
+                  <Paper style={{ borderRadius: 40 }} className='result-container'>
+                    <span className='title'>Passo intermediário:</span><br />
+                    <Table data={currentInterResult} />
+                  </Paper>
+                )
+              }
+            </div>
+          </Paper>
+        )
+        : <Tables tables={tables} />}
+    </>
   )
 
   // return (

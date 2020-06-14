@@ -44,7 +44,7 @@ export default Component => withConnect(props => {
     const departamento = generateDepartaments()
     const empregado = generateEmployers()
     const dependente = generateDependents()
-    debugger
+
     setTables({
       ...tables,
       departamento,
@@ -158,6 +158,7 @@ export default Component => withConnect(props => {
   }
   return (
     <Component
+      tables={tables}
       onChange={onChange}
       doSearch={doSearch}
       elements={elements}
