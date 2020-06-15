@@ -1,5 +1,6 @@
 import { formatObjectToArray } from "../utils/fomart"
 import _ from 'lodash'
+import fp from 'lodash/fp'
 export default class QueryProcessor {
   constructor() {
     this.database = {}
@@ -17,7 +18,6 @@ export default class QueryProcessor {
   processGraph = (graph) => {
     const firstNode = Object.keys(graph)[0]
     this.startProcessGraph(graph, firstNode)
-    console.log(this.intermedResults)
   }
 
   startProcessGraph = (graph, key) => {
@@ -36,6 +36,22 @@ export default class QueryProcessor {
     }
     return 'hello'
   }
+  /*
+  Examples:
+  select * from departamento
+  select nome from empregado 
+  select departamento_nome from departamento, empregado
+  select departamento_nome, empregado_salario from departamento, empregado where empregado_salario>8000
+  select departamento_nome from departamento, empregado where empregado_matri=200
+  select * from departamento where cod_dep=15
+  select nome from empregado where matri=500
+  select nome, matri from empregado where matri=200
+  select * from departamento where cod_dep>5
+  select * from empregado left join departamento on empregado.lotacao = departamento.cod_dep where empregado_salario>3000
+  select departamento_nome, empregado_salario from empregado left join departamento on empregado.lotacao = departamento.cod_dep where empregado_salario>9000
+  select empregado_matri, departamento_nome from empregado left join departamento on empregado.lotacao = departamento.cod_dep
+  */
+
 
   checkIfNodeIsProcessed = (node) => this.processedNodes.filter(processedNode => processedNode === node).length > 0
 
@@ -87,11 +103,17 @@ export default class QueryProcessor {
         this.stepIndex += 1
         break
       case 'getTable':
-        pages = this.getPages(tableName)
+        console.log(this.database)
+        pages = this.getPages(tableName.replace(' ', ''))
         this.intermedResults.push(this.getTable(pages))
         this.stepIndex += 1
         // if ( + de uma tabela)
         break
+      case 'doUnion': 
+        console.log('Union:: ', this.intermedResults.length,  this.intermedResults[0],  this.intermedResults[1])
+        this.intermedResults.push(this.doUnion(step))
+        this.stepIndex += 1
+        break;
       case 'getTableOrdered':
         pages = this.getPages(tableName)
         const table = this.getTable(pages)
@@ -99,7 +121,11 @@ export default class QueryProcessor {
         this.stepIndex += 1
         break;
       case 'filterColumns':
-        this.intermedResults.push(this.getSelectColumns(step.columns, this.intermedResults[this.stepIndex - 1]))
+        this.intermedResults.push(this.getSelectColumns(step.columns))
+        this.stepIndex += 1
+        break;
+      case 'doMergeJoin':
+        this.intermedResults.push(this.doMergeJoin(step))
         this.stepIndex += 1
         break;
       case 'treatWhere':
@@ -107,14 +133,56 @@ export default class QueryProcessor {
         this.intermedResults.push(whereTable)
         this.stepIndex += 1
         break
-      case 'showResult':
-        this.intermedResults.push(this.intermedResults[this.stepIndex - 1])
-        break
       default:
         break
     }
   }
   /// extra function
+
+  doMergeJoin = (step) => {
+    const result = []
+    for (var i in this.intermedResults[1]) {
+      for (var j in this.intermedResults[0]) {
+        if (this.intermedResults[1][i][step.columns[1]]===this.intermedResults[0][j][step.columns[0]]) {
+          result.push({
+            ...this.formatLine(this.intermedResults[1][i], step.tables[1]), 
+            ...this.formatLine(this.intermedResults[0][j], step.tables[0])
+          })
+        }
+      }
+    }
+    return result
+    
+  }
+
+  formatLine = (line, name) => {
+    const formatedTable = {}
+    Object.keys(line).map(key=> {
+      formatedTable[`${name}_${key}`] = line[key]
+    })
+    return formatedTable
+  }
+  
+  doUnion = (step) => {
+    const result = []
+    for (var i in this.intermedResults[0]) {
+      const formatedTable1 = {}
+      Object.keys(this.intermedResults[0][i]).map(key=> {
+        formatedTable1[`${step.tables[0].trim()}_${key}`] = this.intermedResults[0][i][key]
+      })
+      for (var j in  this.intermedResults[1]) {
+        const formatedTable2 = {}
+        Object.keys(this.intermedResults[1][j]).map(key=> {
+          formatedTable2[`${step.tables[1].trim()}_${key}`] = this.intermedResults[1][j][key]
+        })
+
+
+        result.push({...formatedTable1, ...formatedTable2})
+      }
+    }
+
+    return result
+  }
   tableScanBinary = (step, start=0, end=this.intermedResults[this.stepIndex - 1].length -1) => {
     const table = this.intermedResults[this.stepIndex - 1]
     const field = step.where[0].trim()
@@ -163,6 +231,7 @@ export default class QueryProcessor {
     const table = this.intermedResults[this.stepIndex - 1]
     const [field, condition, testValue] = step.where
     let filteredTable = []
+    console.log('tablxxxx, ', table, field)
     table.map(tuple => {
       if (this.treatWhereConditon(tuple[field.trim()], condition, testValue))
         filteredTable.push(tuple)
@@ -196,14 +265,9 @@ export default class QueryProcessor {
     }
   }
 
-  getSelectColumns = (columns, table) => {
-    const keys = Object.keys(table[0])
-    const differences = _.difference(keys, columns)
-    return table.map(tuple => {
-      let copyTuple = {}
-      Object.assign(copyTuple, tuple)
-      differences.map(diff => { delete copyTuple[diff] })
-      return copyTuple
-    })
-  }
+  getSelectColumns = (columns) =>
+    (columns.length===1 && ['*', 'all'].includes(columns[0])) ? 
+    this.intermedResults[this.intermedResults.length-1] :
+    fp.map(fp.pick(columns), this.intermedResults[this.intermedResults.length-1].slice());
+
 }

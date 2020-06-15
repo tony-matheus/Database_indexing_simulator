@@ -7,7 +7,7 @@ export default class Parser {
 
   constructor() {
     this.database = {}
-    this.graph = { }
+    this.graph = {}
     this.uiGraph = []
     this.graphId = 1
   }
@@ -28,10 +28,75 @@ export default class Parser {
     return Regex().map(r => r.exec(sql)).filter(el => el !== null)[0]
   }
 
+  // label, id, step, target = ''
+
+  removeSpaces = (str) => str.replace(' ', '')
+
+  selectWithJoin = (options) => {
+    this.addNode('Juntar Paginas da ' + options[9], this.graphId, {
+      doWhat: 'getTable',
+      tableName: this.removeSpaces(options[9])
+    }, this.graphId + 2)
+    this.graphId += 1
+
+    this.addNode('Juntar Paginas da ' + options[11], this.graphId, {
+      doWhat: 'getTable',
+      tableName: this.removeSpaces(options[11])
+    }, this.graphId + 1)
+    this.graphId += 1
+
+    this.addNode('MergeJoin: ' + options[11] + ', ' + options[9], this.graphId, {
+      doWhat: 'doMergeJoin',
+      tables: [options[9], options[11]],
+      columns: [this.removeSpaces(options[10]), this.removeSpaces(options[12])],
+      
+    }, this.graphId + 1)
+    this.graphId += 1
+    options[13]==='where' && this.treatWhereCondition([options[14], options[15], options[16]], options[4])
+    this.treatSelectCondition(this.removeSpaces(options[2]), options[4])
+  }
+
+  selectMultiTables = (tables) => {
+    tables.map((name) => {
+      const tableName = this.removeSpaces(name)
+      this.addNode('Juntar Paginas da ' + tableName, this.graphId, {
+        doWhat: 'getTable',
+        tableName,
+      }, tables.length +1)
+      this.graphId += 1
+    })
+    this.addNode('União: ' + tables.join(',') , this.graphId, {
+      doWhat: 'doUnion',
+      tables
+    }, this.graphId + 1)
+    console.log(this.graphId)
+    this.graphId += 1
+  }
+
+
+
   searchAction = (options) => {
-    console.log('options:', options)
+    if (options[6] === 'join' || options[6] === 'JOIN') {
+      const query = {
+        select: options[1],
+        what: options[2],
+        from: options[3],
+        table_name1: options[4],
+        left: options[5],
+        join: options[6],
+        table_name2 : options[7],
+        on: options[8],
+        table_name1on: options[9],
+        column_table1: options[10],
+        table_name2on: options[11],
+        column_table2: options[12]
+      }
+    }
     switch (options[1].toLowerCase()) {
       case 'select':
+        if (options[6] === 'join'){
+          return this.selectWithJoin(options)
+        }
         if (options[5] === 'where')
           return this.select({ which: options[2], table: options[4], where: [options[6], options[7], options[8]] })
         return this.select({ which: options[2], table: options[4] })
@@ -54,7 +119,7 @@ export default class Parser {
 
   getColumns = (columns, primaryKeyColumn, tableName) => {
     columns = this.findTableColumns(columns)
-    if(tableName !== 'dependentes') {
+    if (tableName !== 'dependentes') {
       return columns.filter(column => !primaryKeyColumn.trim().includes(column.name))
     }
     return columns
@@ -75,93 +140,54 @@ export default class Parser {
       })
     )
 
+  
   select = ({ which, table, where = '' }) => {
-    if (where) {
-      this.startSelect(which, table, where)
-      // if( table === 'empregado' && where[0] === '>'){
-
-      // }
-      // function ler pages para pegar table
-      // function pegar table
-      // pegar a outra tabela
-      // juntar as outras duas tabelas => table unica
-      // percorrer a tabela e achar salario > 1000 => tabela unica menor
-      // filtrar a tabela por nome e salario => retorno uma tabela com nome salario
-      // empregado =>  filtro de tabela => resultado final?
-
-
-      // look for another tables
-      return console.log(`selecionar ${which} na tabela ${table} onde ${where[0]} for ${where[1]} que ${where[2]}`)
-    }
-    // select * from Table
-    this.startSelect(which, table)
+    this.startSelect(which, table, where)
     return this.graph
   }
 
   // Search Processor
 
-  startSelect = (fields, tableName, where = '') => {
-    // this.graph = {}
-    if (where) {
-      return this.treatSelectWhere(fields, tableName, where)
-    }
+  startSelect = (fields, tableName, where = '') => 
+    this.treatSelect(fields.toLowerCase().trim(), tableName, where)
+  
 
-    return this.treatSimpleSelect(fields.toLowerCase().trim(), tableName)
-  }
-
-  treatSimpleSelect = (fields, tableName) => {
-    this.treatDataFromTable(tableName)
-    this.treatSelectCondition(fields, tableName)
-
-    // select nome, salario from Empregado where salario > 1000
-  }
-
-  treatSelectWhere = (fields, tableName, where) => {
+  treatSelect = (fields, tableName, where) => {
     this.treatDataFromTable(tableName, where)
-    // if(this.hasAnotherTable()) { }
-    this.treatWhereCondition(where, tableName)
+    where && this.treatWhereCondition(where, tableName)
     this.treatSelectCondition(fields, tableName)
-
   }
 
   treatDataFromTable = (tableName, where) => {
     if (where && this.ifUseIndexSeek(where) || this.ifUseIndexScan(where)) return
+    if (tableName.split(',').length>1) {
+      return this.selectMultiTables(this.removeSpaces(tableName).split(','))
+    }
+
     if(where && where[1] === '=' && this.isPrimaryKey(where[0])){
       this.addNode('Juntar Paginas da ' + tableName, this.graphId, {
         doWhat: 'getTableOrdered',
-        tableName
+        tableName: this.removeSpaces(tableName),
       }, this.graphId + 1)
       this.graphId += 1
       return
     }
     this.addNode('Juntar Paginas da ' + tableName, this.graphId, {
       doWhat: 'getTable',
-      tableName
+      tableName: this.removeSpaces(tableName),
     }, this.graphId + 1)
     this.graphId += 1
   }
 
-  treatSelectCondition = (fields, tableName) => {
-    if (fields.replace(' ', '') === '*' || fields === 'all') {
-      return this.addNode('exibir resultado da consulta ', this.graphId, {
-        doWhat: 'showResult',
-        tableName
-      })
-    }
-    const columns = this.filterSelectFields(fields)
-    if(columns.length > 0){
-      return this.addNode('filtrar as colunas e retornar somente ' + columns.join(' '), this.graphId, {
+  treatSelectCondition = (fields) => 
+  this.addNode('Projeção', this.graphId, {
         doWhat: 'filterColumns',
-        columns,
-        tableName
+        columns: this.filterSelectFields(fields),
       })
-    }
-    console.log(this.filterSelectFields(fields))
-  }
 
-  ifUseIndexSeek = (where) =>  (where[0]==='matri') && where[1]==='=' && 'indexSeek'
-  ifUseTableScanBinary = (where) =>  (where[0]==='cod_dep') && where[1]==='=' && 'tableScanBinary'
-  ifUseIndexScan = (where) =>  (where[0]==='cod_dep') && where[1]==='>' && 'indexScan'
+  ifUseIndexSeek = (where) =>  (where && where[0]==='matri') && where[1]==='=' && 'indexSeek'
+  ifUseTableScanBinary = (where) =>  (where &&  where[0]==='cod_dep') && where[1]==='=' && 'tableScanBinary'
+  ifUseIndexScan = (where) =>  (where && where[0]==='cod_dep') && where[1]==='>' && 'indexScan'
 
   getOperator = (where) => 
     this.ifUseIndexSeek(where) || 
@@ -174,7 +200,7 @@ export default class Parser {
         doWhat: 'treatWhere',
         where,
         operator: this.getOperator(where),
-        tableName
+        tableName: this.removeSpaces(tableName),
       }, this.graphId + 1)
       this.graphId += 1
   }
@@ -201,7 +227,7 @@ export default class Parser {
     this.uiGraph.push({ [id]: { target: [target], label }, position: { x: 250, y: 70 * id } })
   }
 
-  filterSelectFields = (fields) => fields.trim().split(',').map(field => field.trim())
+  filterSelectFields = (fields) => fields.replace(' ', '').split(',').map(field => field)
 
   isPrimaryKey = (field) => ['matri', 'cod_dep'].includes(field.trim())
 }

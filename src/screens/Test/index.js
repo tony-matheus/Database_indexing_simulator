@@ -22,7 +22,7 @@ export const VisibleArea = styled.div`
 
 const Test = ({ onChange, doSearch, elements, changeRoute, intermediateResults, tables }) => {
   const [currentInterResult, setCurrentInterResult] = useState(null)
-  const [hideTables, setHideTables] = useState(false)
+  const [hideTables, setHideTables] = useState(true)
 
   const hideShowTables = () => {
     setHideTables(!hideTables)
