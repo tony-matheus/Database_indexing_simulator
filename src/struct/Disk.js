@@ -4,15 +4,19 @@ import Hash from './Hash'
 
 export default class Disk {
 
-  constructor(tuples, settings, pk) {
+  constructor(tuples, settings, pk, biggerPk) {
     this.settings = settings;
     this.content = this.fillPage(tuples, pk);
     this.hash = new Hash(tuples, settings, pk);
+    this.biggerPk = biggerPk;
     this.addAllInHash();
   }
 
   add = (pageKey, tuple) => this.content[pageKey].add(tuple);
-  get = (tupleKey) => this.content[this.hash.get(tupleKey).pageKey].get(tupleKey);
+  get = (tupleKey) =>  {
+    const address = this.hash.get(tupleKey)
+    return address && this.content[address.pageKey].get(tupleKey);
+  } 
 
   getAllPageKeys = () => Object.keys(this.content);
 

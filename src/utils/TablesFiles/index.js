@@ -21,27 +21,29 @@ const returnTableContent = (tableName, columns, pk, fk = '', tableReferences = '
   }
 }
 
-export const readTextFile = (lines) => {
-  const array = lines.split('\n')
-  createTupleKeys(array.length)
-  return array
-}
+export const readTextFile = (lines) => lines.split('\n')
+
 // data name é o nome da informação que vai ta na tabela pq ainda n pensei em uma maneira boa pra fazer dinamico depedendo do numero
 const formatTuple = (lines, columns, pk, fk = '', tableReferences) => {
   const tuples = []
-  lines.map(line => tuples.push({
-    [pk]: getRandomTupleKey(),
-    ...setTupleColumnValue(columns, line.split('|'), fk, tableReferences)
-  }))
-  return shuffle(tuples)
+  const keys = shuffle([...Array(lines.length).keys()])
+
+  lines.map(line => {
+    tuples.push({
+      [pk]: keys.pop() + 1,
+      ...setTupleColumnValue(columns, line.split('|'), fk, tableReferences)
+    })
+  })
+  return { content: shuffle(tuples), biggerPk: lines.length }
 }
 
 const formatTupleComposite = (lines, columns, pk, fk = '', tableReferences) => {
   const tuples = []
+  let biggerPk = 0
   lines.map(line => tuples.push({
     ...setTupleColumnCompositeValue(columns, line.split('|'), fk, tableReferences, pk)
   }))
-  return tuples
+  return { content: tuples }
 }
 
 const setTupleColumnCompositeValue = (columns, line, fk, tableReferences, pk) => {

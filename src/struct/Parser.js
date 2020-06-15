@@ -29,6 +29,7 @@ export default class Parser {
   }
 
   searchAction = (options) => {
+    console.log('options:', options)
     switch (options[1].toLowerCase()) {
       case 'select':
         if (options[5] === 'where')
@@ -124,6 +125,7 @@ export default class Parser {
   }
 
   treatDataFromTable = (tableName, where) => {
+    if (where && this.ifUseIndexSeek(where) || this.ifUseIndexScan(where)) return
     if(where && where[1] === '=' && this.isPrimaryKey(where[0])){
       this.addNode('Juntar Paginas da ' + tableName, this.graphId, {
         doWhat: 'getTableOrdered',
@@ -131,26 +133,6 @@ export default class Parser {
       }, this.graphId + 1)
       this.graphId += 1
       return
-    } else if (where && this.ifUseIndexSeek(where)) {
-      this.addNode('Carregar buckets em memoria', this.graphId, {
-        doWhat: 'getBuckets',
-        tableName,
-      }, this.graphId + 1)
-      this.graphId += 1
-
-      this.addNode('Buscar bucket', this.graphId, {
-        doWhat: 'getBucket',
-        key: where[2]
-      }, this.graphId + 1)
-      this.graphId += 1
-
-      this.addNode('Pegar Pagina do(a) ' + tableName, this.graphId, {
-        doWhat: 'getPage',
-        tableName,
-        key: where[2]
-      }, this.graphId + 1)
-      this.graphId += 1
-
     }
     this.addNode('Juntar Paginas da ' + tableName, this.graphId, {
       doWhat: 'getTable',
@@ -177,20 +159,17 @@ export default class Parser {
     console.log(this.filterSelectFields(fields))
   }
 
-  ifUseIndexSeek = (where) =>  (where[0]==='cod_dep' || where[0]==='matri') && where[1]==='=' && 'indexSeek'
+  ifUseIndexSeek = (where) =>  (where[0]==='matri') && where[1]==='=' && 'indexSeek'
+  ifUseTableScanBinary = (where) =>  (where[0]==='cod_dep') && where[1]==='=' && 'tableScanBinary'
+  ifUseIndexScan = (where) =>  (where[0]==='cod_dep') && where[1]==='>' && 'indexScan'
 
-  getOperator = (where) => this.ifUseIndexSeek(where) || 'tableScan'
+  getOperator = (where) => 
+    this.ifUseIndexSeek(where) || 
+    this.ifUseTableScanBinary(where) ||
+    this.ifUseIndexScan(where) || 
+    'tableScan'
 
   treatWhereCondition = (where, tableName) => {
-    if(where[1] === '=' && this.isPrimaryKey(where[0])){
-      this.addNode('filtrar as tuplas por ' + where.join(' '), this.graphId, {
-        doWhat: 'treatWhereBinary',
-        where,
-        operator: this.getOperator(where),
-        tableName
-      }, this.graphId + 1)
-      this.graphId += 1
-    } else {
       this.addNode('filtrar as tuplas por ' + where.join(' '), this.graphId, {
         doWhat: 'treatWhere',
         where,
@@ -198,7 +177,6 @@ export default class Parser {
         tableName
       }, this.graphId + 1)
       this.graphId += 1
-    }
   }
 
   getPages = (tableName) => formatObjectToArray(this.database[tableName].disk.content)

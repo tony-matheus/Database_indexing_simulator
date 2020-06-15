@@ -14,8 +14,11 @@ export default class Hash {
 
   add = (pageKey, tupleKey) => this.table[this.function(tupleKey)].add(pageKey, tupleKey);
 
-  get = (tupleKey) =>
-    this.table[this.function(tupleKey)].get(tupleKey);
+  get = (tupleKey) => {
+    const address = this.function(tupleKey)
+    return address && this.table[address] && this.table[address].get(tupleKey);
+  }
+    
 
   generateHashTable = (tuples, pk) => {
     const table = {};

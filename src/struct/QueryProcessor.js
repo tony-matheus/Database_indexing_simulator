@@ -103,16 +103,8 @@ export default class QueryProcessor {
         this.stepIndex += 1
         break;
       case 'treatWhere':
-        console.log(step.operator)
-        const whereTable = this[step.operator](this.intermedResults[this.stepIndex - 1], step.where)
+        const whereTable = this[step.operator](step)
         this.intermedResults.push(whereTable)
-        this.stepIndex += 1
-        break
-      case 'treatWhereBinary':
-        const lastResult = this.intermedResults[this.stepIndex - 1]
-        console.log(lastResult)
-        const result = this.whereBinary(lastResult, step.where[0].trim(), parseInt(step.where[2].trim()), 0, lastResult.length - 1)
-        this.intermedResults.push([result])
         this.stepIndex += 1
         break
       case 'showResult':
@@ -123,7 +115,11 @@ export default class QueryProcessor {
     }
   }
   /// extra function
-  whereBinary = (table, field, value, start, end) => {
+  tableScanBinary = (step, start=0, end=this.intermedResults[this.stepIndex - 1].length -1) => {
+    const table = this.intermedResults[this.stepIndex - 1]
+    const field = step.where[0].trim()
+    const value = parseInt(step.where[2].trim())
+
     if (start > end) return [];
 
     const mid = Math.floor((start + end) / 2);
@@ -131,9 +127,9 @@ export default class QueryProcessor {
     if (table[mid][field] === value) return table[mid];
 
     if (table[mid][field] > value)
-      return this.whereBinary(table, field, value, start, mid - 1);
+      return this.tableScanBinary(step, start, mid - 1);
 
-    return this.whereBinary(table, field, value, mid + 1, end);
+    return this.tableScanBinary(step, mid + 1, end);
   }
 
   getPages = (tableName) => formatObjectToArray(this.database[tableName].disk.content)
@@ -161,9 +157,11 @@ export default class QueryProcessor {
     pages.map(page => Object.values(page.value.content).map(tuple => table.push(tuple)))
     return table
   }
+  
 
-  tableScan = (table, where) => {
-    const [field, condition, testValue] = where
+  tableScan = (step) => {
+    const table = this.intermedResults[this.stepIndex - 1]
+    const [field, condition, testValue] = step.where
     let filteredTable = []
     table.map(tuple => {
       if (this.treatWhereConditon(tuple[field.trim()], condition, testValue))
@@ -172,7 +170,18 @@ export default class QueryProcessor {
     return filteredTable
   }
 
-  indexSeek = (table, where) => [table.find(row => row[where[0]] == where[2])]
+  indexScan = (step) => {
+    const start = parseInt(step.where[2])
+    const { biggerPk, get } = this.database[step.tableName].disk
+    const filteredTable = []
+    for (var i=start+1 ; i<= biggerPk; i++) {
+      const tuple = get(i)
+      tuple && filteredTable.push(tuple)
+    }
+    return filteredTable
+  }
+
+  indexSeek = (step) => [this.database[step.tableName].disk.get(step.where[2])]
 
   treatWhereConditon = (value, condition, testValue) => {
     switch (condition) {

@@ -89,7 +89,7 @@ export default Component => withConnect(props => {
         primary key(cod_dep)
       )
     `)
-    const disk = new Disk(departamentsTable.newContent, settings, departamentsTable.primaryKey)
+    const disk = new Disk(departamentsTable.newContent, settings, departamentsTable.primaryKey, departamentsTable.biggerPk)
     // const departamentsPages = formatObjectToArray(departamentsDisk.content)
     // const departamentsBuckets = departamentsDisk.hash.buckets()
     // const departamentsOverflows = departamentsBuckets.flatMap(bucket => bucket.getOverflowBuckets())
@@ -108,7 +108,7 @@ export default Component => withConnect(props => {
       )
     `)
 
-    const disk = new Disk(employersTable.newContent, settings, employersTable.primaryKey)
+    const disk = new Disk(employersTable.newContent, settings, employersTable.primaryKey, employersTable.biggerPk)
     return { disk }
   }
 
