@@ -41,7 +41,8 @@ export default Component => withConnect(props => {
   })
 
   useEffect(() => {
-  }, [settings])
+    startSimulation()
+  }, [])
 
   const startSimulation = () => {
     const departamento = generateDepartaments()
