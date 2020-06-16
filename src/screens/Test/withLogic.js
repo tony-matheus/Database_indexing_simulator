@@ -33,18 +33,24 @@ export default Component => withConnect(props => {
     empregado: {},
     dependente: {}
   })
-
-  const settings = {
+  const [settings, setSettings] = useState({
     BUCKET_SIZE: 10,
     HASH_NUMBER: 479,
-    NUMBER_MAX_PAGES: 200,
-    PAGE_SIZE: 50
-  }
+    NUMBER_MAX_PAGES: 100,
+    PAGE_SIZE: 1000
+  })
 
   useEffect(() => {
+    console.log(settings)
+  }, [settings])
+
+  const startSimulation = () => {
     const departamento = generateDepartaments()
     const empregado = generateEmployers()
     const dependente = generateDependents()
+
+    console.log(tables)
+    console.log(settings)
 
     setTables({
       ...tables,
@@ -52,7 +58,7 @@ export default Component => withConnect(props => {
       empregado,
       dependente
     })
-  }, [])
+  }
 
   useEffect(() => {
     parser.updateDatabase(tables)
@@ -165,6 +171,12 @@ export default Component => withConnect(props => {
       elements={elements}
       changeRoute={changeRoute}
       intermediateResults={intermediateResults}
+
+      startSimulation={startSimulation}
+      setSettings={setSettings}
+      settings={settings}
+      setSearch={setSearch}
+      search={search}
     />
   )
 })

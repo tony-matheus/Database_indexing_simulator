@@ -49,7 +49,7 @@ export default class Parser {
       doWhat: 'doMergeJoin',
       tables: [options[9], options[11]],
       columns: [this.removeSpaces(options[10]), this.removeSpaces(options[12])],
-      
+
     }, this.graphId + 1)
     this.graphId += 1
     options[13]==='where' && this.treatWhereCondition([options[14], options[15], options[16]], options[4])
@@ -73,8 +73,6 @@ export default class Parser {
     this.graphId += 1
   }
 
-
-
   searchAction = (options) => {
     if (options[6] === 'join' || options[6] === 'JOIN') {
       const query = {
@@ -91,6 +89,8 @@ export default class Parser {
         table_name2on: options[11],
         column_table2: options[12]
       }
+      // console.log(query)
+      // debugger
     }
     switch (options[1].toLowerCase()) {
       case 'select':
@@ -140,7 +140,7 @@ export default class Parser {
       })
     )
 
-  
+
   select = ({ which, table, where = '' }) => {
     this.startSelect(which, table, where)
     return this.graph
@@ -148,9 +148,9 @@ export default class Parser {
 
   // Search Processor
 
-  startSelect = (fields, tableName, where = '') => 
+  startSelect = (fields, tableName, where = '') =>
     this.treatSelect(fields.toLowerCase().trim(), tableName, where)
-  
+
 
   treatSelect = (fields, tableName, where) => {
     this.treatDataFromTable(tableName, where)
@@ -179,7 +179,7 @@ export default class Parser {
     this.graphId += 1
   }
 
-  treatSelectCondition = (fields) => 
+  treatSelectCondition = (fields) =>
   this.addNode('Projeção', this.graphId, {
         doWhat: 'filterColumns',
         columns: this.filterSelectFields(fields),
@@ -189,10 +189,10 @@ export default class Parser {
   ifUseTableScanBinary = (where) =>  (where &&  where[0]==='cod_dep') && where[1]==='=' && 'tableScanBinary'
   ifUseIndexScan = (where) =>  (where && where[0]==='cod_dep') && where[1]==='>' && 'indexScan'
 
-  getOperator = (where) => 
-    this.ifUseIndexSeek(where) || 
+  getOperator = (where) =>
+    this.ifUseIndexSeek(where) ||
     this.ifUseTableScanBinary(where) ||
-    this.ifUseIndexScan(where) || 
+    this.ifUseIndexScan(where) ||
     'tableScan'
 
   treatWhereCondition = (where, tableName) => {

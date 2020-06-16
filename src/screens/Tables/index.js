@@ -27,7 +27,7 @@ const Tables = ({ tables }) => {
   }
 
   useEffect(() => {
-    selectTable('Departamento')
+    selectTable('Empregados')
   }, [tables])
 
   const selectTable = (tableName) => {
