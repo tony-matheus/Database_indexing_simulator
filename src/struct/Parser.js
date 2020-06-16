@@ -52,7 +52,7 @@ export default class Parser {
 
     }, this.graphId + 1)
     this.graphId += 1
-    options[13]==='where' && this.treatWhereCondition([options[14], options[15], options[16]], options[4])
+    this.treatWhereCondition(options[13] ? [options[14], options[15], options[16]] : undefined, options[4])
     this.treatSelectCondition(this.removeSpaces(options[2]), options[4])
   }
 
@@ -136,7 +136,7 @@ export default class Parser {
 
   treatSelect = (fields, tableName, where) => {
     this.treatDataFromTable(tableName, where)
-    where && this.treatWhereCondition(where, tableName)
+    this.treatWhereCondition(where, tableName)
     this.treatSelectCondition(fields, tableName)
   }
 
@@ -178,10 +178,12 @@ export default class Parser {
     'tableScan'
 
   treatWhereCondition = (where, tableName) => {
-      this.addNode('filtrar as tuplas por ' + where.join(' '), this.graphId, {
+    console.log('90-90-29130-12930-1930-190-23910-2390-90-')
+    console.log(where)
+      this.addNode(where ? 'filtrar as tuplas por ' + where.join(' ') : 'filtrar (sem filtro)', this.graphId, {
         doWhat: 'treatWhere',
         where,
-        operator: this.getOperator(where),
+        operator: where && this.getOperator(where),
         tableName: this.removeSpaces(tableName),
       }, this.graphId + 1)
       this.graphId += 1

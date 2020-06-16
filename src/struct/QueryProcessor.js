@@ -128,8 +128,12 @@ export default class QueryProcessor {
         this.stepIndex += 1
         break;
       case 'treatWhere':
-        const whereTable = this[step.operator](step)
-        this.intermedResults.push(Array.isArray(whereTable) ? whereTable : [whereTable])
+        if(step.where) {
+          const whereTable = this[step.operator](step)
+          this.intermedResults.push(Array.isArray(whereTable) ? whereTable : [whereTable])
+        } else {
+          this.intermedResults.push(this.intermedResults[this.intermedResults.length - 1])
+        }
         this.stepIndex += 1
         break
       default:
