@@ -41,7 +41,6 @@ export default Component => withConnect(props => {
   })
 
   useEffect(() => {
-    console.log(settings)
   }, [settings])
 
   const startSimulation = () => {

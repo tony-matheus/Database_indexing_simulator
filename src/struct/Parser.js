@@ -33,13 +33,13 @@ export default class Parser {
   removeSpaces = (str) => str.replace(' ', '')
 
   selectWithJoin = (options) => {
-    this.addNode('Juntar Paginas da ' + options[9], this.graphId, {
+    this.addNode(options[9], this.graphId, {
       doWhat: 'getTable',
       tableName: this.removeSpaces(options[9])
     }, this.graphId + 2)
     this.graphId += 1
 
-    this.addNode('Juntar Paginas da ' + options[11], this.graphId, {
+    this.addNode(options[11], this.graphId, {
       doWhat: 'getTable',
       tableName: this.removeSpaces(options[11])
     }, this.graphId + 1)
@@ -59,7 +59,7 @@ export default class Parser {
   selectMultiTables = (tables) => {
     tables.map((name) => {
       const tableName = this.removeSpaces(name)
-      this.addNode('Juntar Paginas da ' + tableName, this.graphId, {
+      this.addNode(tableName, this.graphId, {
         doWhat: 'getTable',
         tableName,
       }, tables.length +1)
@@ -165,14 +165,14 @@ export default class Parser {
     }
 
     if(where && where[1] === '=' && this.isPrimaryKey(where[0])){
-      this.addNode('Juntar Paginas da ' + tableName, this.graphId, {
+      this.addNode(tableName, this.graphId, {
         doWhat: 'getTableOrdered',
         tableName: this.removeSpaces(tableName),
       }, this.graphId + 1)
       this.graphId += 1
       return
     }
-    this.addNode('Juntar Paginas da ' + tableName, this.graphId, {
+    this.addNode(tableName, this.graphId, {
       doWhat: 'getTable',
       tableName: this.removeSpaces(tableName),
     }, this.graphId + 1)

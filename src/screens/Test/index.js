@@ -44,8 +44,8 @@ export const Input = styled.input`
 const Test = ({ onChange, doSearch, elements, changeRoute, setSearch, search, intermediateResults, tables, startSimulation, settings, setSettings }) => {
   const [currentInterResult, setCurrentInterResult] = useState(null)
   const [hideTables, setHideTables] = useState(true)
-  const [isDrawerVisible, setIsDrawerVisible] = useState(false)
-  const [isOptionsVisible, setIsOptionsVisible] = useState(true)
+  const [isDrawerVisible, setIsDrawerVisible] = useState(true)
+  const [isOptionsVisible, setIsOptionsVisible] = useState(false)
 
   const hideShowTables = () => {
     setHideTables(!hideTables)
