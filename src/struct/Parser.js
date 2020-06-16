@@ -74,24 +74,6 @@ export default class Parser {
   }
 
   searchAction = (options) => {
-    if (options[6] === 'join' || options[6] === 'JOIN') {
-      const query = {
-        select: options[1],
-        what: options[2],
-        from: options[3],
-        table_name1: options[4],
-        left: options[5],
-        join: options[6],
-        table_name2 : options[7],
-        on: options[8],
-        table_name1on: options[9],
-        column_table1: options[10],
-        table_name2on: options[11],
-        column_table2: options[12]
-      }
-      // console.log(query)
-      // debugger
-    }
     switch (options[1].toLowerCase()) {
       case 'select':
         if (options[6] === 'join'){
@@ -185,9 +167,9 @@ export default class Parser {
         columns: this.filterSelectFields(fields),
       })
 
-  ifUseIndexSeek = (where) =>  (where && where[0]==='matri') && where[1]==='=' && 'indexSeek'
-  ifUseTableScanBinary = (where) =>  (where &&  where[0]==='cod_dep') && where[1]==='=' && 'tableScanBinary'
-  ifUseIndexScan = (where) =>  (where && where[0]==='cod_dep') && where[1]==='>' && 'indexScan'
+  ifUseIndexSeek = (where) =>  (where && this.removeSpaces(where[0])==='matri') && this.removeSpaces(where[1])==='=' && 'indexSeek'
+  ifUseTableScanBinary = (where) =>  (where &&  this.removeSpaces(where[0])==='cod_dep') && this.removeSpaces(where[1])==='=' && 'tableScanBinary'
+  ifUseIndexScan = (where) =>  (where && this.removeSpaces(where[0])==='cod_dep') && this.removeSpaces(where[1])==='>' && 'indexScan'
 
   getOperator = (where) =>
     this.ifUseIndexSeek(where) ||

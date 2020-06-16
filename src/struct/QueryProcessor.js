@@ -110,7 +110,6 @@ export default class QueryProcessor {
         // if ( + de uma tabela)
         break
       case 'doUnion': 
-        console.log('Union:: ', this.intermedResults.length,  this.intermedResults[0],  this.intermedResults[1])
         this.intermedResults.push(this.doUnion(step))
         this.stepIndex += 1
         break;
@@ -130,7 +129,7 @@ export default class QueryProcessor {
         break;
       case 'treatWhere':
         const whereTable = this[step.operator](step)
-        this.intermedResults.push(whereTable)
+        this.intermedResults.push(Array.isArray(whereTable) ? whereTable : [whereTable])
         this.stepIndex += 1
         break
       default:
@@ -158,7 +157,7 @@ export default class QueryProcessor {
   formatLine = (line, name) => {
     const formatedTable = {}
     Object.keys(line).map(key=> {
-      formatedTable[`${name}_${key}`] = line[key]
+      formatedTable[`${name}.${key}`] = line[key]
     })
     return formatedTable
   }
@@ -168,15 +167,13 @@ export default class QueryProcessor {
     for (var i in this.intermedResults[0]) {
       const formatedTable1 = {}
       Object.keys(this.intermedResults[0][i]).map(key=> {
-        formatedTable1[`${step.tables[0].trim()}_${key}`] = this.intermedResults[0][i][key]
+        formatedTable1[`${step.tables[0].trim()}.${key}`] = this.intermedResults[0][i][key]
       })
       for (var j in  this.intermedResults[1]) {
         const formatedTable2 = {}
         Object.keys(this.intermedResults[1][j]).map(key=> {
-          formatedTable2[`${step.tables[1].trim()}_${key}`] = this.intermedResults[1][j][key]
+          formatedTable2[`${step.tables[1].trim()}.${key}`] = this.intermedResults[1][j][key]
         })
-
-
         result.push({...formatedTable1, ...formatedTable2})
       }
     }
@@ -231,7 +228,6 @@ export default class QueryProcessor {
     const table = this.intermedResults[this.stepIndex - 1]
     const [field, condition, testValue] = step.where
     let filteredTable = []
-    console.log('tablxxxx, ', table, field)
     table.map(tuple => {
       if (this.treatWhereConditon(tuple[field.trim()], condition, testValue))
         filteredTable.push(tuple)
@@ -265,9 +261,9 @@ export default class QueryProcessor {
     }
   }
 
-  getSelectColumns = (columns) =>
+  getSelectColumns = (columns) => 
     (columns.length===1 && ['*', 'all'].includes(columns[0])) ? 
     this.intermedResults[this.intermedResults.length-1] :
-    fp.map(fp.pick(columns), this.intermedResults[this.intermedResults.length-1].slice());
+    fp.map(fp.pick(columns.join(',').replace(' ', '').split(',')), this.intermedResults[this.intermedResults.length-1].slice());
 
 }

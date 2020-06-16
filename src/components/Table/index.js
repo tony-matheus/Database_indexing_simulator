@@ -71,6 +71,7 @@ export default function TableComponent ({ data, shortContainer = true }) {
           <TableHead style={{}}>
             <TableRow style={{}}>
               {columns.map((column) => (
+                !['departamento_id', 'matri_resp,nome'].includes(column.label) &&
                 <TableCell
                   key={column.id}
                   align={column.align}
@@ -87,7 +88,7 @@ export default function TableComponent ({ data, shortContainer = true }) {
                 <TableRow hover role='checkbox' tabIndex={-1} key={index.toString()}>
                   {columns.map((column) => {
                     const value = column.id === 'value' ? row[column.id].name : row[column.id]
-                    return (
+                    return !['departamento_id', 'matri_resp,nome'].includes(column.label) && (
                       <TableCell key={column.id} align={column.align}>
                         {value}
                       </TableCell>
